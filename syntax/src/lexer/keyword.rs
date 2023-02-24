@@ -1,4 +1,4 @@
-use super::{Token, TokenType};
+use super::{Token, TokenKind};
 use chumsky::{
     prelude::Simple,
     primitive::{choice, just, one_of},
@@ -12,9 +12,9 @@ const KEYWORD_END: &str = "end";
 
 pub(super) fn keywords() -> impl Parser<char, Token, Error = Simple<char>> {
     let kws = choice((
-        just(KEYWORD_LET).map_with_span(|_, span| Token::new(TokenType::LetKeyword, span)),
-        just(KEYWORD_DEF).map_with_span(|_, span| Token::new(TokenType::DefKeyword, span)),
-        just(KEYWORD_END).map_with_span(|_, span| Token::new(TokenType::EndKeyword, span)),
+        just(KEYWORD_LET).map_with_span(|_, span| Token::new(TokenKind::LetKeyword, span)),
+        just(KEYWORD_DEF).map_with_span(|_, span| Token::new(TokenKind::DefKeyword, span)),
+        just(KEYWORD_END).map_with_span(|_, span| Token::new(TokenKind::EndKeyword, span)),
     ));
 
     kws.or(whitespace().ignore_then(kws).then_ignore(whitespace()))
@@ -23,26 +23,26 @@ pub(super) fn keywords() -> impl Parser<char, Token, Error = Simple<char>> {
 #[cfg(test)]
 mod tests {
     use super::keywords;
-    use crate::lexer::{expect_lexer, TokenType};
+    use crate::lexer::{expect_lexer, TokenKind};
 
     #[test]
     fn let_keyword() {
-        expect_lexer("let", keywords(), TokenType::LetKeyword);
-        expect_lexer("  let", keywords(), TokenType::LetKeyword);
-        expect_lexer("let  ", keywords(), TokenType::LetKeyword);
+        expect_lexer("let", keywords(), TokenKind::LetKeyword);
+        expect_lexer("  let", keywords(), TokenKind::LetKeyword);
+        expect_lexer("let  ", keywords(), TokenKind::LetKeyword);
     }
 
     #[test]
     fn def_keyword() {
-        expect_lexer("def", keywords(), TokenType::DefKeyword);
-        expect_lexer("  def", keywords(), TokenType::DefKeyword);
-        expect_lexer("def  ", keywords(), TokenType::DefKeyword);
+        expect_lexer("def", keywords(), TokenKind::DefKeyword);
+        expect_lexer("  def", keywords(), TokenKind::DefKeyword);
+        expect_lexer("def  ", keywords(), TokenKind::DefKeyword);
     }
 
     #[test]
     fn end_keyword() {
-        expect_lexer("end", keywords(), TokenType::EndKeyword);
-        expect_lexer("  end", keywords(), TokenType::EndKeyword);
-        expect_lexer("end  ", keywords(), TokenType::EndKeyword);
+        expect_lexer("end", keywords(), TokenKind::EndKeyword);
+        expect_lexer("  end", keywords(), TokenKind::EndKeyword);
+        expect_lexer("end  ", keywords(), TokenKind::EndKeyword);
     }
 }

@@ -1,4 +1,4 @@
-use super::{Token, TokenType};
+use super::{Token, TokenKind};
 use chumsky::{
     prelude::Simple,
     primitive::{choice, just, one_of},
@@ -9,7 +9,7 @@ fn base_ten() -> impl Parser<char, Token, Error = Simple<char>> {
     text::int(10)
         .from_str()
         .unwrapped()
-        .map_with_span(|v, span| Token::new(TokenType::Integer(v), span))
+        .map_with_span(|v, span| Token::new(TokenKind::Integer(v), span))
 }
 
 const HEX_PREFIX_LOWER: &str = "0x";
@@ -31,7 +31,7 @@ fn hexadecimal() -> impl Parser<char, Token, Error = Simple<char>> {
         .then(one_of(HEX_LIST).repeated().collect::<String>())
         .map_with_span(
             |(_, val), span| match i64::from_str_radix(val.as_str(), 16) {
-                Ok(v) => Token::new(TokenType::Integer(v), span),
+                Ok(v) => Token::new(TokenKind::Integer(v), span),
                 Err(e) => unreachable!("Hexadecimal integer parse error: {}", e),
             },
         )
@@ -43,7 +43,7 @@ fn octal() -> impl Parser<char, Token, Error = Simple<char>> {
         .then(one_of(OCTAL_LIST).repeated().collect::<String>())
         .map_with_span(
             |(_, val), span| match i64::from_str_radix(val.as_str(), 8) {
-                Ok(v) => Token::new(TokenType::Integer(v), span),
+                Ok(v) => Token::new(TokenKind::Integer(v), span),
                 Err(e) => unreachable!("Octal integer parse error: {}", e),
             },
         )
@@ -55,7 +55,7 @@ fn binary() -> impl Parser<char, Token, Error = Simple<char>> {
         .then(one_of(BINARY_LIST).repeated().collect::<String>())
         .map_with_span(
             |(_, val), span| match i64::from_str_radix(val.as_str(), 2) {
-                Ok(v) => Token::new(TokenType::Integer(v), span),
+                Ok(v) => Token::new(TokenKind::Integer(v), span),
                 Err(e) => unreachable!("Binary integer parse error: {}", e),
             },
         )
@@ -80,7 +80,7 @@ fn float_without_exponent() -> impl Parser<char, Token, Error = Simple<char>> {
         .map_with_span(|(whole, (dot, frac)), span| {
             let number = format!("{}{}{}", whole, dot, frac);
             match number.parse::<f64>() {
-                Ok(v) => Token::new(TokenType::Float(v), span),
+                Ok(v) => Token::new(TokenKind::Float(v), span),
                 Err(e) => unreachable!("Float parsing error: {}", e),
             }
         })
@@ -98,8 +98,8 @@ fn float_with_exponent() -> impl Parser<char, Token, Error = Simple<char>> {
                     Err(e) => unreachable!("Could not parse exponent: {}", e),
                 }),
         )
-        .map_with_span(|((tok, _), power), span| match tok.token_type {
-            TokenType::Float(f) => Token::new(TokenType::Float(f * 10f64.powf(power as f64)), span),
+        .map_with_span(|((tok, _), power), span| match tok.kind {
+            TokenKind::Float(f) => Token::new(TokenKind::Float(f * 10f64.powf(power as f64)), span),
             _ => unreachable!("Whole component could not be parsed"),
         })
 }
@@ -108,8 +108,8 @@ fn boolean() -> impl Parser<char, Token, Error = Simple<char>> {
     just("true")
         .or(just("false"))
         .map_with_span(|val, span| match val {
-            "true" => Token::new(TokenType::Boolean(true), span),
-            "false" => Token::new(TokenType::Boolean(false), span),
+            "true" => Token::new(TokenKind::Boolean(true), span),
+            "false" => Token::new(TokenKind::Boolean(false), span),
             e => unreachable!("Invalid boolean literal: {}", e),
         })
 }
@@ -130,58 +130,58 @@ pub(super) fn literal() -> impl Parser<char, Token, Error = Simple<char>> {
 #[cfg(test)]
 mod tests {
     use super::literal;
-    use crate::lexer::{Token, TokenType};
+    use crate::lexer::{Token, TokenKind};
     use chumsky::{prelude::Simple, Parser};
 
     fn expect_parser(
         input: &str,
         parser: impl Parser<char, Token, Error = Simple<char>>,
-        expect_case: TokenType,
+        expect_case: TokenKind,
     ) {
         let (val, _) = parser.parse_recovery(input);
         match val {
-            Some(tok) => assert_eq!(tok.token_type, expect_case),
+            Some(tok) => assert_eq!(tok.kind, expect_case),
             None => panic!("parse_recovery returned a None case."),
         }
     }
 
     #[test]
     fn base_ten_integers() {
-        expect_parser("123", literal(), TokenType::Integer(123))
+        expect_parser("123", literal(), TokenKind::Integer(123))
     }
 
     #[test]
     fn hex_integers() {
-        expect_parser("0x123", literal(), TokenType::Integer(291));
-        expect_parser("0X123", literal(), TokenType::Integer(291));
+        expect_parser("0x123", literal(), TokenKind::Integer(291));
+        expect_parser("0X123", literal(), TokenKind::Integer(291));
     }
 
     #[test]
     fn octal_integers() {
-        expect_parser("0o123", literal(), TokenType::Integer(83));
-        expect_parser("0O123", literal(), TokenType::Integer(83))
+        expect_parser("0o123", literal(), TokenKind::Integer(83));
+        expect_parser("0O123", literal(), TokenKind::Integer(83))
     }
 
     #[test]
     fn binary_integers() {
-        expect_parser("0b1010", literal(), TokenType::Integer(10));
-        expect_parser("0B1010", literal(), TokenType::Integer(10))
+        expect_parser("0b1010", literal(), TokenKind::Integer(10));
+        expect_parser("0B1010", literal(), TokenKind::Integer(10))
     }
 
     #[test]
     fn floats() {
-        expect_parser("12.34", literal(), TokenType::Float(12.34))
+        expect_parser("12.34", literal(), TokenKind::Float(12.34))
     }
 
     #[test]
     fn scientific_float() {
-        expect_parser("1.23e2", literal(), TokenType::Float(123.0));
-        expect_parser("1.23E-2", literal(), TokenType::Float(0.0123))
+        expect_parser("1.23e2", literal(), TokenKind::Float(123.0));
+        expect_parser("1.23E-2", literal(), TokenKind::Float(0.0123))
     }
 
     #[test]
     fn booleans() {
-        expect_parser("true", literal(), TokenType::Boolean(true));
-        expect_parser("false", literal(), TokenType::Boolean(false));
+        expect_parser("true", literal(), TokenKind::Boolean(true));
+        expect_parser("false", literal(), TokenKind::Boolean(false));
     }
 }
