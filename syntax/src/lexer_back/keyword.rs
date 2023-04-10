@@ -23,7 +23,7 @@ pub(super) fn keywords() -> impl Parser<char, Token, Error = Simple<char>> {
 #[cfg(test)]
 mod tests {
     use super::keywords;
-    use crate::lexer::{expect_lexer, TokenType};
+    use crate::lexer_back::{expect_lexer, TokenType};
 
     #[test]
     fn let_keyword() {

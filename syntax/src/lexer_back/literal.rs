@@ -130,7 +130,7 @@ pub(super) fn literal() -> impl Parser<char, Token, Error = Simple<char>> {
 #[cfg(test)]
 mod tests {
     use super::literal;
-    use crate::lexer::{Token, TokenType};
+    use crate::lexer_back::{Token, TokenType};
     use chumsky::{prelude::Simple, Parser};
 
     fn expect_parser(

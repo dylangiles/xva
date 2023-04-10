@@ -23,7 +23,7 @@ pub(super) fn operators() -> impl Parser<char, Token, Error = Simple<char>> {
 #[cfg(test)]
 mod tests {
     use super::operators;
-    use crate::lexer::{expect_lexer, TokenType};
+    use crate::lexer_back::{expect_lexer, TokenType};
 
     #[test]
     fn addition_operator() {

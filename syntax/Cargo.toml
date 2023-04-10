@@ -7,3 +7,8 @@ edition = "2021"
 
 [dependencies]
 chumsky = "0.8.0"
+logos = "0.12.1"
+rowan = "0.15.10"
+
+[dev-dependencies]
+expect-test = "1.4.1"
