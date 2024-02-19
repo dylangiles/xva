@@ -1,6 +1,7 @@
 use sha2::{Digest, Sha256};
 use std::{
     collections::HashMap,
+    fmt::Display,
     io::Read,
     ops::Range,
     path::PathBuf,
@@ -17,6 +18,31 @@ pub struct CheapRange<Idx>(Idx, Idx);
 impl<Idx> CheapRange<Idx> {
     pub const fn new(start: Idx, end: Idx) -> Self {
         Self(start, end)
+    }
+}
+
+impl<Idx> std::fmt::Display for CheapRange<Idx>
+where
+    Idx: Display,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let Self(start, end) = self;
+        write!(f, "{}..{}", start, end)
+    }
+}
+
+impl<Idx> CheapRange<Idx>
+where
+    Idx: Copy,
+{
+    pub fn start(&self) -> Idx {
+        let Self(start, _) = self;
+        *start
+    }
+
+    pub fn end(&self) -> Idx {
+        let Self(_, end) = self;
+        *end
     }
 }
 
@@ -66,10 +92,16 @@ impl std::fmt::Display for SourceId {
 }
 
 /// Associates a range of source text with the source file that it came from.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct SourceSpan {
     src: SourceId,
     range: CheapRange<usize>,
+}
+
+impl std::fmt::Debug for SourceSpan {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} in {}", self.range, self.src)
+    }
 }
 
 impl SourceSpan {
@@ -79,6 +111,10 @@ impl SourceSpan {
 
     pub fn src(&self) -> SourceId {
         self.src
+    }
+
+    pub fn range(&self) -> CheapRange<usize> {
+        self.range
     }
 }
 
