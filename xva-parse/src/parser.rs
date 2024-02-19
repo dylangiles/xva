@@ -19,6 +19,7 @@ use xva_ast::{ast::Item, node_id::NodeId};
 use xva_span::SourceId;
 
 mod expr;
+mod operator;
 
 use crate::{
     error::{ErrorPattern, SyntaxError, SyntaxErrorKind},
@@ -33,15 +34,19 @@ pub(self) fn next_node_id() -> NodeId {
     NODE_ID_SEED.fetch_add(1, Ordering::SeqCst).into()
 }
 
-pub(crate) type ParserError = extra::Err<SyntaxError>;
+pub(crate) type ParserExtras = extra::Err<SyntaxError>;
 pub fn parse<'src>(
     input: &'src str,
     src_id: SourceId,
     debug_lexer: bool,
-) -> (Item, Vec<SyntaxError>) {
+) -> (Vec<Item>, Vec<SyntaxError>) {
     let (tokens, lex_errors) = lex(input, src_id, debug_lexer);
 
-    let (tree, parse_errors) = parser().parse(tokens.as_slice()).into_output_errors();
+    let (tree, parse_errors) = parser()
+        .repeated()
+        .collect()
+        .parse(tokens.as_slice())
+        .into_output_errors();
 
     // SAFETY: the parser is infallible - it will always produce a tree, even if the tree is empty.
     (
@@ -54,14 +59,15 @@ pub fn parse<'src>(
 }
 
 pub(crate) fn parser<'src>() -> impl Parser<'src, &'src [Token], Item, extra::Err<SyntaxError>> {
-    expression().or(any().validate(|tok: Token, _extra, emitter| {
-        emitter.emit(SyntaxError::new(
-            SyntaxErrorKind::UnexpectedPattern(ErrorPattern::Token(tok.kind)),
-            tok.span,
-        ));
+    // expression().or(any().validate(|tok: Token, _extra, emitter| {
+    //     emitter.emit(SyntaxError::new(
+    //         SyntaxErrorKind::UnexpectedPattern(ErrorPattern::Token(tok.kind)),
+    //         tok.span,
+    //     ));
 
-        Item::error(tok.span, tok.original.into())
-    }))
+    //     Item::error(tok.span, tok.original.into())
+    // }))
+    expression()
 }
 
 #[cfg(test)]

@@ -54,8 +54,8 @@ pub enum TokenKind {
     DocComment(Intern<String>),
 
     // Symbols
-    Open(Delimiter),
-    Close(Delimiter),
+    OpenDelim(Delimiter),
+    CloseDelim(Delimiter),
     Colon,
     Comma,
     DoubleQuote,
@@ -141,12 +141,12 @@ impl<'src> std::fmt::Display for TokenKind {
             TokenKind::Identifier(i) => write!(f, "'{i}'"),
             TokenKind::CharError(err) => write!(f, "'{err}'"),
             TokenKind::Error(err) => write!(f, "'{err}'"),
-            TokenKind::Open(delim) => match delim {
+            TokenKind::OpenDelim(delim) => match delim {
                 Delimiter::Parentheses => write!(f, "("),
                 Delimiter::Braces => write!(f, "{{"),
                 Delimiter::SquareBrackets => write!(f, "["),
             },
-            TokenKind::Close(delim) => match delim {
+            TokenKind::CloseDelim(delim) => match delim {
                 Delimiter::Parentheses => write!(f, ")"),
                 Delimiter::Braces => write!(f, "}}"),
                 Delimiter::SquareBrackets => write!(f, "]"),

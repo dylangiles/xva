@@ -1,8 +1,16 @@
-use chumsky::{extra::ParserExtra, prelude::*, primitive::select, Parser};
-use xva_ast::ast::{Expression, ExpressionKind, Item, ItemKind, LiteralKind, UnaryOperator};
-use xva_span::{CheapRange, SourceSpan};
+use chumsky::{prelude::*, primitive::select, Parser};
+use xva_ast::ast::{Expression, ExpressionKind, Item, ItemKind, LiteralKind};
 
-use super::{next_node_id, ParserError};
+mod utils;
+
+use self::utils::left_fold_into_binary_expr;
+
+use super::{
+    next_node_id,
+    operator::{close_paren, open_paren, product_op, sum_op, unary_op},
+    ParserExtras,
+};
+
 use crate::{
     error::SyntaxError,
     token::{Token, TokenKind},
@@ -22,65 +30,39 @@ fn literal<'src>() -> impl Parser<'src, &'src [Token], Expression, extra::Err<Sy
         kind: ExpressionKind::Literal(lit),
         span,
     })
-    // .map(|(lit, span)| Item {
-    //     id: next_node_id(),
-    //     kind: ItemKind::Expression(Expression {
-    //         id: next_node_id(),
-    //         kind: ExpressionKind::Literal(lit),
-    //         span,
-    //     }),
-    //     span,
-    // })
 }
 
-fn unary_operator<'src>(
-) -> impl Parser<'src, &'src [Token], UnaryOperator, extra::Err<SyntaxError>> + Clone {
-    select(|token: Token, _| match token.kind() {
-        TokenKind::Not => Some(UnaryOperator::Not),
-        TokenKind::Minus => Some(UnaryOperator::Negation),
-        _ => None,
+pub(crate) fn expression<'src>() -> impl Parser<'src, &'src [Token], Item, ParserExtras> + Clone {
+    recursive(|expr| {
+        let atom = literal().or(expr.clone().delimited_by(open_paren(), close_paren()));
+
+        let unary = unary_op().repeated().foldr(atom.clone(), |op, rhs| {
+            let span = rhs.span.clone();
+            Expression {
+                id: next_node_id(),
+                kind: ExpressionKind::Unary(op, Box::from(rhs)),
+                span,
+            }
+        });
+
+        // We take a unary parser, then a binary operator and the unary parser repeated, continously folding
+        // that onto itself and producing an expression each time.
+        let product = unary.clone().foldl(
+            product_op().then(unary).repeated(),
+            left_fold_into_binary_expr,
+        );
+
+        // Sums are lower precedence than products, so we do the same thing as products except looking for products
+        // instead of unaries. Take a product, then a sum operator and a product repeated, continuously folding and
+        // producing an expression.
+        let sum = product.clone().foldl(
+            sum_op().then(product).repeated(),
+            left_fold_into_binary_expr,
+        );
+
+        sum
     })
-}
-
-// fn unary<'src>() -> impl Parser<'src, &'src [Token], Item, ParserError> {
-//     unary_operator().then()
-// }
-
-fn just_kind<'src>(
-    kind: TokenKind,
-) -> impl Parser<'src, &'src [Token], TokenKind, ParserError> + Clone {
-    select(move |x: Token, _| {
-        if core::mem::discriminant(&x.kind()) == core::mem::discriminant(&kind) {
-            Some(kind)
-        } else {
-            None
-        }
-    })
-}
-
-fn unary<'src>() -> impl Parser<'src, &'src [Token], Expression, ParserError> + Clone {
-    let atom = literal();
-
-    select(move |tok: Token, _| match tok.kind() {
-        TokenKind::Minus => Some((UnaryOperator::Negation, tok)),
-        TokenKind::Not => Some((UnaryOperator::Not, tok)),
-        _ => None,
-    })
-    .then(atom.map(|x| x))
-    .map(|((op, op_tok), expr)| {
-        let src_id = op_tok.span.src();
-        let start = op_tok.span.start();
-        let end = expr.span.end();
-        Expression {
-            id: next_node_id(),
-            kind: ExpressionKind::Unary(op, Box::from(expr)),
-            span: SourceSpan::new(src_id, CheapRange::new(start, end)),
-        }
-    })
-}
-
-pub(crate) fn expression<'src>() -> impl Parser<'src, &'src [Token], Item, ParserError> + Clone {
-    choice((literal(), unary())).map(|expr| {
+    .map(|expr| {
         let span = expr.span.clone();
         Item {
             id: next_node_id(),
@@ -89,20 +71,3 @@ pub(crate) fn expression<'src>() -> impl Parser<'src, &'src [Token], Item, Parse
         }
     })
 }
-
-// pub(crate) fn expression<'src>() -> impl Parser<'src, &'src [Token], Item, ParserError> + Clone {
-//     recursive(|expr| {
-//         let atom = choice((literal(),));
-
-//         let unary_op = select(|token: Token, _| match token.kind {
-//             TokenKind::Not => Some(UnaryOperator::Not),
-//             TokenKind::Minus => Some(UnaryOperator::Negation),
-//             _ => None,
-//         });
-
-//         let unary = just(unary_op);
-//         // let unary = just("-").then(atom)
-
-//         choice((unary, atom))
-//     })
-// }

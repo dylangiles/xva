@@ -1,5 +1,7 @@
 use chumsky::prelude::*;
 
+use crate::token::Delimiter;
+
 use super::{LexerExtra, TokenKind};
 
 const VALID_CONTROL_CHARS: &str = r#"(){}:,"#;
@@ -7,10 +9,10 @@ const VALID_SINGLE_CHAR_OPERATORS: &str = r#"+-*%<>&|^"#;
 
 pub(crate) fn control<'src>() -> impl Parser<'src, &'src str, TokenKind, LexerExtra> {
     one_of(VALID_CONTROL_CHARS).map(|c| match c {
-        '(' => TokenKind::OpenParen,
-        ')' => TokenKind::CloseParen,
-        '{' => TokenKind::OpenBrace,
-        '}' => TokenKind::CloseBrace,
+        '(' => TokenKind::OpenDelim(Delimiter::Parentheses),
+        ')' => TokenKind::CloseDelim(Delimiter::Parentheses),
+        '{' => TokenKind::OpenDelim(Delimiter::Braces),
+        '}' => TokenKind::CloseDelim(Delimiter::Parentheses),
         ':' => TokenKind::Colon,
         ',' => TokenKind::Comma,
         // '"' => Token::DoubleQuote,       // Quotes are handled by literals
@@ -69,14 +71,17 @@ pub(crate) fn operator<'src>() -> impl Parser<'src, &'src str, TokenKind, LexerE
 
 #[cfg(test)]
 mod tests {
-    use crate::lexer::{tests::assert_single_no_errors, TokenKind};
+    use crate::{
+        lexer::{tests::assert_single_no_errors, TokenKind},
+        token::Delimiter,
+    };
 
     #[test]
     fn controls() {
-        assert_single_no_errors("(", &TokenKind::OpenParen);
-        assert_single_no_errors(")", &TokenKind::CloseParen);
-        assert_single_no_errors("{", &TokenKind::OpenBrace);
-        assert_single_no_errors("}", &TokenKind::CloseBrace);
+        assert_single_no_errors("(", &TokenKind::OpenDelim(Delimiter::Parentheses));
+        assert_single_no_errors(")", &TokenKind::CloseDelim(Delimiter::Parentheses));
+        assert_single_no_errors("{", &TokenKind::OpenDelim(Delimiter::Braces));
+        assert_single_no_errors("}", &TokenKind::CloseDelim(Delimiter::Braces));
         assert_single_no_errors(":", &TokenKind::Colon);
         assert_single_no_errors(",", &TokenKind::Comma);
         assert_single_no_errors("=", &TokenKind::Equals);
