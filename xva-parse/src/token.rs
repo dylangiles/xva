@@ -12,6 +12,20 @@ pub struct Token {
     pub original: Intern<String>,
 }
 
+impl Token {
+    pub fn kind(&self) -> TokenKind {
+        self.kind
+    }
+
+    pub fn start(&self) -> usize {
+        self.span.range().start()
+    }
+
+    pub fn end(&self) -> usize {
+        self.span.range().start()
+    }
+}
+
 impl std::fmt::Display for Token {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.kind)

@@ -21,23 +21,24 @@ use xva_span::SourceId;
 mod expr;
 
 use crate::{
-    error::{ErrorPattern, SyntaxErrorKind},
+    error::{ErrorPattern, SyntaxError, SyntaxErrorKind},
     lexer::lex,
     token::Token,
 };
 
-use self::expr::literal;
+use self::expr::expression;
 
 pub(self) static NODE_ID_SEED: AtomicI64 = AtomicI64::new(0);
 pub(self) fn next_node_id() -> NodeId {
     NODE_ID_SEED.fetch_add(1, Ordering::SeqCst).into()
 }
 
+pub(crate) type ParserError = extra::Err<SyntaxError>;
 pub fn parse<'src>(
     input: &'src str,
     src_id: SourceId,
     debug_lexer: bool,
-) -> (Vec<Item>, Vec<SyntaxError>) {
+) -> (Item, Vec<SyntaxError>) {
     let (tokens, lex_errors) = lex(input, src_id, debug_lexer);
 
     let (tree, parse_errors) = parser().parse(tokens.as_slice()).into_output_errors();
@@ -52,21 +53,15 @@ pub fn parse<'src>(
     )
 }
 
-use crate::error::SyntaxError;
+pub(crate) fn parser<'src>() -> impl Parser<'src, &'src [Token], Item, extra::Err<SyntaxError>> {
+    expression().or(any().validate(|tok: Token, _extra, emitter| {
+        emitter.emit(SyntaxError::new(
+            SyntaxErrorKind::UnexpectedPattern(ErrorPattern::Token(tok.kind)),
+            tok.span,
+        ));
 
-pub(crate) fn parser<'src>() -> impl Parser<'src, &'src [Token], Vec<Item>, extra::Err<SyntaxError>>
-{
-    literal()
-        .or(any().validate(|tok: Token, _extra, emitter| {
-            emitter.emit(SyntaxError::new(
-                SyntaxErrorKind::UnexpectedPattern(ErrorPattern::Token(tok.kind)),
-                tok.span,
-            ));
-
-            Item::error(tok.span, tok.original.into())
-        }))
-        .repeated()
-        .collect()
+        Item::error(tok.span, tok.original.into())
+    }))
 }
 
 #[cfg(test)]

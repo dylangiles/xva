@@ -70,7 +70,7 @@ pub enum LiteralKind {
     String(String), // TODO PLEASE change this to interned strings bruh
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum UnaryOperator {
     Negation,
     Not,
