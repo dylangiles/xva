@@ -34,8 +34,17 @@ fn literal<'src>() -> impl Parser<'src, &'src [Token], Expression, extra::Err<Sy
 
 pub(crate) fn expression<'src>() -> impl Parser<'src, &'src [Token], Item, ParserExtras> + Clone {
     recursive(|expr| {
-        let atom = literal().or(expr.clone().delimited_by(open_paren(), close_paren()));
+        // An atom is a completely unambigious expression:
+        let atom = literal() // Literals, or
+            .or(expr.clone().delimited_by(open_paren(), close_paren())); // expressions enclosed in parentheses
 
+        // With parser combinators, precedence is done by defining a parser in terms of the parser with the
+        // next highest precedence, and so on. To get recursive expressions, such as 1 + 2 * 3 / 4, we start with
+        // an initial parse of something, then continously fold an operator and another "something" onto itself,
+        // producing an Expression node after each fold. The direction in which we fold is the same as the
+        // associativity of the expression.
+
+        // Unary expressions are right-associative: a repeated unary operator, right-folded on to an atom.
         let unary = unary_op().repeated().foldr(atom.clone(), |op, rhs| {
             let span = rhs.span.clone();
             Expression {
@@ -45,16 +54,15 @@ pub(crate) fn expression<'src>() -> impl Parser<'src, &'src [Token], Item, Parse
             }
         });
 
-        // We take a unary parser, then a binary operator and the unary parser repeated, continously folding
-        // that onto itself and producing an expression each time.
+        // Binary expressions are similar to unaries, but they are left-associative. The first expression type with
+        // a higher precedence are unaries,  so we define products in terms of unaries: unary, followed by a
+        // product operator, repeating, folding left.
         let product = unary.clone().foldl(
             product_op().then(unary).repeated(),
             left_fold_into_binary_expr,
         );
 
-        // Sums are lower precedence than products, so we do the same thing as products except looking for products
-        // instead of unaries. Take a product, then a sum operator and a product repeated, continuously folding and
-        // producing an expression.
+        // Same as products, but now we're in **terms of** products
         let sum = product.clone().foldl(
             sum_op().then(product).repeated(),
             left_fold_into_binary_expr,
