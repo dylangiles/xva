@@ -32,6 +32,13 @@ impl std::fmt::Display for Token {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Delimiter {
+    Parentheses,
+    Braces,
+    SquareBrackets,
+}
+
 #[allow(dead_code)]
 #[derive(Clone, Copy, Debug)] // Manual PartialEq impl
 pub enum TokenKind {
@@ -47,10 +54,8 @@ pub enum TokenKind {
     DocComment(Intern<String>),
 
     // Symbols
-    OpenParen,
-    CloseParen,
-    OpenBrace,
-    CloseBrace,
+    Open(Delimiter),
+    Close(Delimiter),
     Colon,
     Comma,
     DoubleQuote,
@@ -104,10 +109,6 @@ impl<'src> std::fmt::Display for TokenKind {
             TokenKind::Float(fl) => write!(f, "'{fl}'"),
             TokenKind::Comment(co) => write!(f, "'{co}'"),
             TokenKind::DocComment(dco) => write!(f, "'{dco}'"),
-            TokenKind::OpenParen => write!(f, "'('"),
-            TokenKind::CloseParen => write!(f, "')'"),
-            TokenKind::OpenBrace => write!(f, "'{{'"),
-            TokenKind::CloseBrace => write!(f, "'}}'"),
             TokenKind::Colon => write!(f, "':'"),
             TokenKind::Comma => write!(f, "','"),
             TokenKind::DoubleQuote => write!(f, "'\"'"),
@@ -140,6 +141,16 @@ impl<'src> std::fmt::Display for TokenKind {
             TokenKind::Identifier(i) => write!(f, "'{i}'"),
             TokenKind::CharError(err) => write!(f, "'{err}'"),
             TokenKind::Error(err) => write!(f, "'{err}'"),
+            TokenKind::Open(delim) => match delim {
+                Delimiter::Parentheses => write!(f, "("),
+                Delimiter::Braces => write!(f, "{{"),
+                Delimiter::SquareBrackets => write!(f, "["),
+            },
+            TokenKind::Close(delim) => match delim {
+                Delimiter::Parentheses => write!(f, ")"),
+                Delimiter::Braces => write!(f, "}}"),
+                Delimiter::SquareBrackets => write!(f, "]"),
+            },
         }
     }
 }
