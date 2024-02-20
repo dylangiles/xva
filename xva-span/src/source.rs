@@ -1,3 +1,4 @@
+use ariadne::Span;
 use sha2::{Digest, Sha256};
 use std::{
     collections::HashMap,
@@ -115,6 +116,17 @@ impl SourceSpan {
 
     pub fn range(&self) -> CheapRange<usize> {
         self.range
+    }
+
+    /// Copies this span but replaces the end value with the specified value.
+    pub fn copy_from_ending_at(&self, end: usize) -> Self {
+        Self {
+            src: self.src,
+            range: {
+                let start = self.start();
+                CheapRange::new(start, end)
+            },
+        }
     }
 }
 

@@ -85,6 +85,10 @@ pub enum TokenKind {
     Or,
     Not,
 
+    // Keywords
+    Let,
+    Var,
+
     /// Identifier
     Identifier(Intern<String>),
 
@@ -151,6 +155,9 @@ impl<'src> std::fmt::Display for TokenKind {
                 Delimiter::Braces => write!(f, "}}"),
                 Delimiter::SquareBrackets => write!(f, "]"),
             },
+
+            TokenKind::Let => write!(f, "let"),
+            TokenKind::Var => write!(f, "var"),
         }
     }
 }

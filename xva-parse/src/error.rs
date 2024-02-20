@@ -29,6 +29,18 @@ impl SyntaxError {
         }
     }
 
+    pub const fn unexpected_pattern(
+        pat: ErrorPattern,
+        span: SourceSpan,
+        label: Option<&'static str>,
+    ) -> Self {
+        Self {
+            kind: SyntaxErrorKind::UnexpectedPattern(pat),
+            span,
+            label,
+        }
+    }
+
     pub fn write<C>(self, cache: C, writer: impl Write)
     where
         C: ariadne::Cache<SourceId>,

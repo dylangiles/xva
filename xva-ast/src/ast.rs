@@ -37,7 +37,9 @@ impl Item {
 #[derive(Debug)]
 pub enum ItemKind {
     Expression(Expression),
+    Statement(Statement),
     Module(Module),
+
     Error(Intern<String>),
 }
 
@@ -103,6 +105,52 @@ pub enum BinaryOperator {
 pub enum LiteralIntegerKind {
     Signed,
     Unsigned,
+}
+
+#[derive(Debug)]
+pub struct Statement {
+    pub id: NodeId,
+    pub kind: StatementKind,
+    pub span: SourceSpan,
+}
+
+#[derive(Debug)]
+pub enum StatementKind {
+    Binding(Binding),
+}
+
+/// Represents a binding of a name, i.e. a variable declaration
+///
+/// For example: `let x = 5` or `var x: bool = false`
+#[derive(Debug)]
+pub struct Binding {
+    pub id: NodeId,
+    pub span: SourceSpan,
+    pub kind: BindingKind,
+    pub binding_flags: BindingFlags,
+    pub pattern: BindingPattern,
+}
+
+#[derive(Debug)]
+pub enum BindingKind {
+    Declared,
+    Inited(Box<Expression>),
+}
+
+#[derive(Debug)]
+pub enum BindingPattern {
+    Identifier(Identifier),
+}
+
+#[derive(Debug)]
+pub struct Identifier {
+    pub name: Intern<String>,
+    pub span: SourceSpan,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct BindingFlags {
+    pub mutable: bool,
 }
 
 has_node_id!(Item, Expression);

@@ -19,15 +19,16 @@ use xva_ast::{ast::Item, node_id::NodeId};
 use xva_span::SourceId;
 
 mod expr;
+mod ident;
 mod operator;
+mod stmt;
 
+use self::{expr::expression, stmt::statement};
 use crate::{
     error::{ErrorPattern, SyntaxError, SyntaxErrorKind},
     lexer::lex,
     token::Token,
 };
-
-use self::expr::expression;
 
 pub(self) static NODE_ID_SEED: AtomicI64 = AtomicI64::new(0);
 pub(self) fn next_node_id() -> NodeId {
@@ -59,15 +60,15 @@ pub fn parse<'src>(
 }
 
 pub(crate) fn parser<'src>() -> impl Parser<'src, &'src [Token], Item, extra::Err<SyntaxError>> {
-    // expression().or(any().validate(|tok: Token, _extra, emitter| {
-    //     emitter.emit(SyntaxError::new(
-    //         SyntaxErrorKind::UnexpectedPattern(ErrorPattern::Token(tok.kind)),
-    //         tok.span,
-    //     ));
+    choice((expression(), statement())).or(any().validate(|tok: Token, _extra, emitter| {
+        emitter.emit(SyntaxError::unexpected_pattern(
+            ErrorPattern::Token(tok.kind),
+            tok.span,
+            None,
+        ));
 
-    //     Item::error(tok.span, tok.original.into())
-    // }))
-    expression()
+        Item::error(tok.span, tok.original.into())
+    }))
 }
 
 #[cfg(test)]
