@@ -1,3 +1,5 @@
+#![deny(unused_crate_dependencies)]
+
 pub(crate) mod monotonic;
 pub mod source;
 
