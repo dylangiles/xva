@@ -4,6 +4,12 @@ use crate::traits::HasNodeId;
 use internment::Intern;
 use xva_span::SourceSpan;
 
+mod stmt;
+mod ty;
+
+pub use stmt::*;
+pub use ty::*;
+
 #[derive(Debug)]
 pub struct Brick {
     pub items: Vec<Item>,
@@ -107,52 +113,26 @@ pub enum LiteralIntegerKind {
     Unsigned,
 }
 
-#[derive(Debug)]
-pub struct Statement {
-    pub id: NodeId,
-    pub kind: StatementKind,
-    pub span: SourceSpan,
-}
-
-#[derive(Debug)]
-pub enum StatementKind {
-    Local(Local),
-}
-
-/// Represents a binding of a name, i.e. a variable declaration
-///
-/// For example: `let x = 5` or `var x: bool = false`
-#[derive(Debug)]
-pub struct Local {
-    pub id: NodeId,
-    pub span: SourceSpan,
-    pub kind: BindingKind,
-    pub binding_flags: BindingFlags,
-    pub pattern: BindingPattern,
-}
-
-#[derive(Debug)]
-pub enum BindingKind {
-    Declared,
-    Inited(Box<Expression>),
-}
-
-#[derive(Debug)]
-pub enum BindingPattern {
-    Identifier(Identifier),
-}
-
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Identifier {
     pub name: Intern<String>,
     pub span: SourceSpan,
 }
 
-/// "Settings" for a declared local.
-#[derive(Debug, Clone, Copy)]
-pub struct BindingFlags {
-    /// The local was declared as mutable, i.e. the `var` keyword.
-    pub mutable: bool,
+/// A Xva identifier. This may be made up by a series of [`NameSegment`]s that further qualify a path
+/// to a declaration.
+#[derive(Debug, Clone)]
+pub struct Name {
+    pub id: NodeId,
+    pub span: SourceSpan,
+    pub segments: Vec<NameSegment>,
+}
+
+/// A segment of a Xva identifier. For example, the name `brick.module.function` would contain three [`NameSegment`]s.
+#[derive(Debug, Clone)]
+pub struct NameSegment {
+    pub id: NodeId,
+    pub ident: Identifier,
 }
 
 has_node_id!(Item, Expression);
