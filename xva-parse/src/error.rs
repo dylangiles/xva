@@ -11,7 +11,8 @@ pub enum SyntaxErrorKind {
     UnexpectedEnd,
     UnexpectedPattern(ErrorPattern),
     InvalidUnicode(u32), // UnclosedDelimiter,
-                         // NoEndBranch,
+    // NoEndBranch,
+    UninitedImmutable { expr_start: SourceSpan },
 }
 #[derive(Debug)]
 pub struct SyntaxError {
@@ -49,6 +50,11 @@ impl SyntaxError {
             SyntaxErrorKind::InvalidUnicode(uc) => {
                 format!("Invalid Unicode: the value {uc:#x} is not a valid Unicode scalar value.")
             }
+
+            SyntaxErrorKind::UninitedImmutable { .. } => {
+                "Immutable bindings must be initialised.".to_string()
+            }
+
             error_kind => format!(
                 "{}{}, expected {}",
                 match error_kind {
@@ -70,18 +76,29 @@ impl SyntaxError {
         let report = Report::build(ReportKind::Error, self.span.src(), self.span.start())
             .with_code(3)
             .with_message(msg)
-            .with_label(
-                // BUG: labels attaches to both the text and trailing whitespace, instead of just the text
-                Label::new(self.span)
-                    .with_message(match &self.kind {
-                        SyntaxErrorKind::UnexpectedEnd => "End of input".to_string(),
-                        SyntaxErrorKind::UnexpectedPattern(pat) => {
-                            format!("Unexpected pattern: {} ", pat.fg(Color::Red))
-                        }
-                        SyntaxErrorKind::InvalidUnicode(_) => "Invalid Unicode value here".into(),
-                    })
-                    .with_color(Color::Red),
-            );
+            .with_label(match &self.kind {
+                SyntaxErrorKind::UninitedImmutable { expr_start } => Label::new(expr_start.clone())
+                    .with_message("Insert an initialiser here")
+                    .with_color(Color::Cyan),
+
+                _ => {
+                    Label::new(self.span)
+                        .with_message(match &self.kind {
+                            SyntaxErrorKind::UnexpectedEnd => "End of input".to_string(),
+
+                            // BUG: labels attaches to both the text and trailing whitespace, instead of just the text
+                            SyntaxErrorKind::UnexpectedPattern(pat) => {
+                                format!("Unexpected pattern: {} ", pat.fg(Color::Red))
+                            }
+                            SyntaxErrorKind::InvalidUnicode(_) => {
+                                "Invalid Unicode value here".into()
+                            }
+
+                            _ => unreachable!(),
+                        })
+                        .with_color(Color::Red)
+                }
+            });
 
         report.finish().write(cache, writer).unwrap();
     }
