@@ -9,7 +9,7 @@ edition = "2021"
 clap = { version = "4.3.3", features = ["derive", "cargo"] }
 xva-compiler = { path = "../xva-compiler" }
 xva-parse = { path = "../xva-parse" }
-xva-span = { path = "../xva-span" }
+
 
 [build-dependencies]
 time = { version = "0.3.31", features = [
