@@ -1,6 +1,6 @@
 use chumsky::{prelude::*, primitive::select};
 use xva_ast::ast::{
-    Binding, BindingFlags, BindingKind, BindingPattern, Item, ItemKind, Statement, StatementKind,
+    BindingFlags, BindingKind, BindingPattern, Item, ItemKind, Local, Statement, StatementKind,
 };
 use xva_span::{CheapRange, SourceSpan};
 
@@ -9,19 +9,15 @@ use crate::token::{Token, TokenKind};
 use super::{
     expr::{expression, expression_inner},
     ident::ident,
-    next_node_id, ParserExtras,
+    next_node_id,
+    operator::{just_operator, Op},
+    ParserExtras,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Kw {
     Let,
     Var,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum Op {
-    /// The `=` operator
-    Assign,
 }
 
 fn keyword<'src>(
@@ -42,28 +38,11 @@ fn keyword<'src>(
     })
 }
 
-fn operator<'src>(
-    kind: Op,
-) -> impl Parser<'src, &'src [Token], (Op, SourceSpan), ParserExtras> + Clone {
-    select(move |tok: Token, _| {
-        let matched = match tok.kind() {
-            TokenKind::Equals => Op::Assign,
-            _ => return None,
-        };
-
-        if matched == kind {
-            Some((matched, tok.span))
-        } else {
-            None
-        }
-    })
-}
-
-fn mutable_binding<'src>() -> impl Parser<'src, &'src [Token], Statement, ParserExtras> + Clone {
+fn variable<'src>() -> impl Parser<'src, &'src [Token], Statement, ParserExtras> + Clone {
     keyword(Kw::Var)
         .then(ident())
         .then(
-            operator(Op::Assign)
+            just_operator(Op::Assign)
                 .ignored()
                 .then(expression_inner())
                 .or_not()
@@ -73,7 +52,7 @@ fn mutable_binding<'src>() -> impl Parser<'src, &'src [Token], Statement, Parser
             let span = kw_span.copy_from_ending_at(ident.span.end());
             Statement {
                 id: next_node_id(),
-                kind: StatementKind::Binding(Binding {
+                kind: StatementKind::Local(Local {
                     id: next_node_id(),
                     kind: maybe_expr.map_or_else(
                         || BindingKind::Declared,
@@ -88,18 +67,18 @@ fn mutable_binding<'src>() -> impl Parser<'src, &'src [Token], Statement, Parser
         })
 }
 
-fn binding<'src>() -> impl Parser<'src, &'src [Token], Statement, ParserExtras> + Clone {
+fn local<'src>() -> impl Parser<'src, &'src [Token], Statement, ParserExtras> + Clone {
     let immutable_binding = keyword(Kw::Let)
         .map(|(_, kw_span)| kw_span)
         .then(ident())
-        .then_ignore(operator(Op::Assign))
+        .then_ignore(just_operator(Op::Assign))
         .then(expression_inner())
         .map(|((kw_span, ident), expr)| {
             let span = kw_span.copy_from_ending_at(ident.span.end());
 
             Statement {
                 id: next_node_id(),
-                kind: StatementKind::Binding(Binding {
+                kind: StatementKind::Local(Local {
                     id: next_node_id(),
                     kind: BindingKind::Inited(Box::from(expr)),
                     span,
@@ -110,11 +89,11 @@ fn binding<'src>() -> impl Parser<'src, &'src [Token], Statement, ParserExtras> 
             }
         });
 
-    immutable_binding.or(mutable_binding())
+    immutable_binding.or(variable())
 }
 
 pub(super) fn statement<'src>() -> impl Parser<'src, &'src [Token], Item, ParserExtras> + Clone {
-    choice((binding(),)).map(|stmt| {
+    choice((local(),)).map(|stmt| {
         let span = stmt.span.clone();
         Item {
             id: next_node_id(),

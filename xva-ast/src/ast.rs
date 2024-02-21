@@ -116,14 +116,14 @@ pub struct Statement {
 
 #[derive(Debug)]
 pub enum StatementKind {
-    Binding(Binding),
+    Local(Local),
 }
 
 /// Represents a binding of a name, i.e. a variable declaration
 ///
 /// For example: `let x = 5` or `var x: bool = false`
 #[derive(Debug)]
-pub struct Binding {
+pub struct Local {
     pub id: NodeId,
     pub span: SourceSpan,
     pub kind: BindingKind,
@@ -148,8 +148,10 @@ pub struct Identifier {
     pub span: SourceSpan,
 }
 
+/// "Settings" for a declared local.
 #[derive(Debug, Clone, Copy)]
 pub struct BindingFlags {
+    /// The local was declared as mutable, i.e. the `var` keyword.
     pub mutable: bool,
 }
 
