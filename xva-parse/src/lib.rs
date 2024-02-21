@@ -1,5 +1,6 @@
-pub mod error;
+#![deny(unused_crate_dependencies)]
 
+pub mod error;
 
 pub(crate) mod lexer;
 pub(crate) mod macros;
