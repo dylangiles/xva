@@ -1,3 +1,4 @@
+#![deny(unused_crate_dependencies)]
 use std::{io::Write, sync::Arc};
 
 use xva_parse::SyntaxError;
