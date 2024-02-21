@@ -7,7 +7,7 @@ use self::utils::left_fold_into_binary_expr;
 
 use super::{
     next_node_id,
-    operator::{close_paren, open_paren, product_op, sum_op, unary_op},
+    sigil::{close_paren, open_paren, product_op, sum_op, unary_op},
     ParserExtras,
 };
 

@@ -20,8 +20,9 @@ use xva_span::SourceId;
 
 mod expr;
 mod ident;
-mod operator;
+mod sigil;
 mod stmt;
+mod ty;
 
 use self::{expr::expression, stmt::statement};
 use crate::{

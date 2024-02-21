@@ -4,7 +4,7 @@ use crate::token::Delimiter;
 
 use super::{LexerExtra, TokenKind};
 
-const VALID_CONTROL_CHARS: &str = r#"(){}:,"#;
+const VALID_CONTROL_CHARS: &str = r#"(){}:,."#;
 const VALID_SINGLE_CHAR_OPERATORS: &str = r#"+-*%<>&|^"#;
 
 pub(crate) fn control<'src>() -> impl Parser<'src, &'src str, TokenKind, LexerExtra> {
@@ -15,6 +15,7 @@ pub(crate) fn control<'src>() -> impl Parser<'src, &'src str, TokenKind, LexerEx
         '}' => TokenKind::CloseDelim(Delimiter::Parentheses),
         ':' => TokenKind::Colon,
         ',' => TokenKind::Comma,
+        '.' => TokenKind::Dot,
         // '"' => Token::DoubleQuote,       // Quotes are handled by literals
         // '\'' => Token::SingleQuote,
         // '=' => Token::Equals,
