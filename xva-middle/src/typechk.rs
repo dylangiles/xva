@@ -111,19 +111,42 @@
 //!   | ∀α. σ        [quantifier]
 //! ```
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
+use std::hash::Hash;
 
 use internment::Intern;
 
-pub struct TypeId(u64);
-impl From<u64> for TypeId {
-    fn from(value: u64) -> Self {
-        Self(value)
+pub enum Literal {
+    Unit,
+    Bool,
+    Char,
+    Int,
+    Float,
+    String,
+}
+
+impl Literal {
+    pub fn infer(&self) -> Type {
+        match self {
+            Literal::Unit => Type::Unit,
+            Literal::Bool => Type::Bool,
+            Literal::Char => Type::Char,
+            Literal::Int => Type::Int,
+            Literal::Float => Type::Float,
+            Literal::String => Type::String,
+        }
     }
 }
 
-pub struct TypeContext<'tcx> {
-    map: HashMap<TypeId, &'tcx Polytype<'tcx>>,
+pub enum Type<'tcx> {
+    Unit,
+    Bool,
+    Char,
+    Int,
+    Float,
+    String,
+    Variable(Intern<String>),
+    Function(&'tcx Self, &'tcx Self),
 }
 
 /// The basis for our expressions in the typed lambda calculus.
@@ -133,47 +156,45 @@ pub struct TypeContext<'tcx> {
 ///   | λx -> e      [abstraction]
 /// ```
 pub enum Expression<'tcx> {
-    Variable(&'tcx Variable),
-    Application(&'tcx Application<'tcx>),
-    Abstraction(&'tcx Abstraction<'tcx>),
-    Let(&'tcx Let<'tcx>),
+    Literal(Literal),
+    Variable(Intern<String>),
+    Application(&'tcx Self, &'tcx Self),
+    Abstraction(Intern<String>, &'tcx Self),
+    Let(Intern<String>, &'tcx Self, &'tcx Self),
 }
 
-pub struct Variable(Intern<String>);
-pub struct Application<'tcx>(&'tcx Expression<'tcx>, &'tcx Expression<'tcx>);
+impl<'tcx> Expression<'tcx> {}
 
-pub struct Abstraction<'tcx>(Intern<String>, &'tcx Expression<'tcx>);
+pub struct Polytype<'tcx> {
+    quantifiers: &'tcx [Type<'tcx>],
+    ty: Type<'tcx>,
+}
+// pub struct Environment(HashMap<)
 
-/// let 𝑥 = ℯ1 in ℯ2
-pub struct Let<'tcx>(
-    Intern<String>,
-    &'tcx Expression<'tcx>,
-    &'tcx Expression<'tcx>,
-);
+pub struct Substitution();
+trait Types {
+    /// Returns the set of free type variables in `self`.
+    fn frees(&self) -> HashSet<Intern<String>>;
 
-/// # Monotypes
-/// A monotype is defined as:
-///
-/// ```text
-/// τ = ɑ            [variable]
-///   | 𝐶 τ₁ ... τₙ  [application]
-/// ```
-///
-/// where 𝐶 is the set of type functions, which must contain ->.
-///
-/// For example: 𝐶 = `->`,`int`, `bool`, `list`,`map`,`tuple`, etc.
-pub enum Monotype {
-    Variable(TypeVariable),
-    Application(TypeFunctionApplication),
+    /// Applies the given substitution
+    fn apply(&self, subst: &Substitution) -> Self;
 }
 
-pub struct TypeVariable(Intern<String>);
-pub struct TypeFunctionApplication();
+#[cfg(test)]
+mod tests {
+    use internment::Intern;
 
-// pub struct TypeFunction
-pub enum Polytype<'tcx> {
-    Monotype(Monotype),
-    Quantifier(TypeQuantifier<'tcx>),
+    // use super::{Monotype, Polytype, TypeContext, Variable};
+
+    // #[test]
+    // fn test() {
+    //     let mut context = TypeContext {
+    //         map: Default::default(),
+    //     };
+
+    //     let var = Variable(Intern::new("x".into()));
+
+    //     let ty = Polytype::Monotype(Monotype::Application()
+    //     context.map.insert()
+    // }
 }
-
-pub struct TypeQuantifier<'tcx>(Intern<String>, &'tcx Polytype<'tcx>);
