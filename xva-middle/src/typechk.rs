@@ -111,10 +111,14 @@
 //!   | ∀α. σ        [quantifier]
 //! ```
 
+use im::{ordset, OrdMap, OrdSet};
+use internment::Intern;
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
 
-use internment::Intern;
+use self::subst::Substitution;
+
+mod subst;
 
 pub enum Literal {
     Unit,
@@ -138,6 +142,7 @@ impl Literal {
     }
 }
 
+#[derive(Debug, Clone)]
 pub enum Type<'tcx> {
     Unit,
     Bool,
@@ -147,6 +152,61 @@ pub enum Type<'tcx> {
     String,
     Variable(Intern<String>),
     Function(&'tcx Self, &'tcx Self),
+}
+
+trait Types<'tcx> {
+    /// Returns the set of free type variables in `self`.
+    fn frees(&self) -> OrdSet<Intern<String>>;
+
+    /// Applies the given substitution
+    fn apply(&self, subst: &Substitution<'tcx>) -> Self;
+}
+
+impl<'tcx> Types<'tcx> for Type<'tcx> {
+    fn frees(&self) -> OrdSet<Intern<String>> {
+        match self {
+            // the free variables in the variable x is just x: FV(x) = {x}
+            Type::Variable(var) => ordset![var.clone()],
+
+            // The set of free variables in the function λT -> T' is the union of the set of free variables
+            // in T and T': FV(T → T') = FV(T) ∪ FV(T')
+            Type::Function(in_type, out) => in_type.frees().union(out.frees()),
+
+            // The set of free variables in a primitive type is the empty set
+            _ => ordset![],
+        }
+    }
+
+    // fn apply(&self, subst: &Subst) -> Type {
+    //     match self {
+    //         // Return either the result of the substitution or just itself
+    //         Type::Var(var) => subst.lookup(var).unwrap_or(Type::Var(var.clone())),
+    //         // Return a new function where both type arguments have had the substitution applied
+    //         Type::Fun { in_, out } => Type::Fun {
+    //             in_: Box::new(in_.apply(subst)),
+    //             out: Box::new(out.apply(subst)),
+    //         },
+    //         // Primitive types don't need to be substituted
+    //         t => t.clone(),
+    //     }
+    // }
+    fn apply(&self, subst: &Substitution<'tcx>) -> Self {
+        match self {
+            // The result of the substitution or itself
+            Type::Variable(ident) => subst
+                .lookup(ident)
+                .map(|ty| ty.clone())
+                .unwrap_or(Type::Variable(ident.clone())),
+
+            // A new function, where both the input and output have the substitution applied
+            Type::Function(inp, out) => {
+                Type::Function(&inp.clone().apply(subst), &out.clone().apply(subst))
+            }
+
+            // Primitives do not get substituions applied.
+            prim => prim.clone(),
+        }
+    }
 }
 
 /// The basis for our expressions in the typed lambda calculus.
@@ -170,15 +230,6 @@ pub struct Polytype<'tcx> {
     ty: Type<'tcx>,
 }
 // pub struct Environment(HashMap<)
-
-pub struct Substitution();
-trait Types {
-    /// Returns the set of free type variables in `self`.
-    fn frees(&self) -> HashSet<Intern<String>>;
-
-    /// Applies the given substitution
-    fn apply(&self, subst: &Substitution) -> Self;
-}
 
 #[cfg(test)]
 mod tests {
