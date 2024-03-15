@@ -3,6 +3,7 @@
 use clap::Parser;
 use std::io::{BufRead, Write};
 use xva_compiler::Compiler;
+use xva_hir::HirContext;
 
 mod opts;
 
@@ -25,6 +26,7 @@ fn run_repl(opts: &Options) -> std::io::Result<()> {
     let mut stdout = std::io::stdout();
     let pretty_lex = opts.unstable_option_contains("pretty", "lex");
     let pretty_ast = opts.unstable_option_contains("pretty", "ast");
+    let pretty_hir = opts.unstable_option_contains("pretty", "hir");
 
     loop {
         let _stdout_lock = stdout.lock();
@@ -50,6 +52,18 @@ fn run_repl(opts: &Options) -> std::io::Result<()> {
                 let writer = stdout.lock();
                 compiler.write_syntax_error(error, writer);
             }
+
+            continue;
+        }
+
+        let hcx = HirContext::new();
+        let hir = tree
+            .into_iter()
+            .map(|item| hcx.lower(item))
+            .collect::<Vec<_>>();
+
+        if pretty_hir {
+            println!("{hir:#?}");
         }
     }
 }

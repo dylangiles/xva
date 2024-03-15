@@ -69,13 +69,25 @@ pub enum ExpressionKind {
     Binary(BinaryOperator, Box<Expression>, Box<Expression>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum LiteralKind {
     Integer(i128),
     Boolean(bool),
     Char(char),
     Float(f64),
-    String(String), // TODO PLEASE change this to interned strings bruh
+    String(Intern<String>), // TODO PLEASE change this to interned strings bruh
+}
+
+impl std::fmt::Display for LiteralKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            LiteralKind::Integer(i) => write!(f, "{i}"),
+            LiteralKind::Boolean(b) => write!(f, "{b}"),
+            LiteralKind::Float(fl) => write!(f, "{fl}"),
+            LiteralKind::Char(c) => write!(f, "'{c}'"),
+            LiteralKind::String(s) => write!(f, "\"{s}\""),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy)]

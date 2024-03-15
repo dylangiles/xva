@@ -1,125 +1,126 @@
 use internment::Intern;
+use xva_ast::ast::LiteralKind;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub(crate) enum Expression<'tcx> {
+use crate::typechk::{context::TypeContext, ty::Type, var::Variable};
+
+/// An expression in the bi-directional system.
+///
+/// ```text
+/// e ::= x        [variable]
+///    | ()        [unit]
+///    | λx. e     [abstraction]
+///    | e e       [application]
+///    | (e : A)   [annotation]
+/// ```
+///
+#[derive(Debug, Clone)]
+pub enum TypeExpr {
+    /// A variable, suchg as `x`
     Variable(Variable),
 
-    Literal(Literal),
+    /// The unit type, `()`
+    Unit,
 
-    Application {
-        function: &'tcx Self,
-        arg: &'tcx Self,
-    },
+    /// A literal expression
+    Literal(LiteralKind),
 
-    Abstraction {
-        param: Variable,
-        expr: &'tcx Self,
-    },
+    /// A function abstraction, `λx. e`
+    Abstraction(Variable, Box<Self>),
 
-    Let {
-        ident: Variable,
-        value: &'tcx Self,
-        in_expr: &'tcx Self,
-    },
+    /// The application of a function, `e e`
+    Application(Box<Self>, Box<Self>),
+
+    /// An expression annotated with a particular type, `(e : A)`
+    Annotation(Box<Self>, Type),
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub(crate) struct Variable(Intern<String>);
-
-impl Variable {
-    #[inline]
-    pub fn new(ident: String) -> Self {
-        Self(Intern::new(ident))
-    }
-
-    pub(crate) fn identifier(&self) -> &str {
-        self.0.as_str()
-    }
-}
-
-impl std::fmt::Display for Variable {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.identifier())
-    }
-}
-
-impl From<String> for Variable {
-    #[inline]
-    fn from(value: String) -> Self {
-        Self::new(value)
-    }
-}
-
-impl From<&str> for Variable {
-    fn from(value: &str) -> Self {
-        Self::new(value.to_string())
-    }
-}
-
-impl std::fmt::Display for Expression<'_> {
+impl std::fmt::Display for TypeExpr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Expression::Variable(var) => write!(f, "{var}"),
-            Expression::Literal(lit) => write!(f, "{lit}"),
-            Expression::Application { function, arg } => write!(f, "({function}) -> {arg}"),
-            Expression::Abstraction { param, expr } => write!(f, "λ{param} -> {expr}"),
-            Expression::Let {
-                ident,
-                value,
-                in_expr,
-            } => write!(f, "let {ident} = {value} in {in_expr}"),
+            TypeExpr::Variable(var) => write!(f, "{var}"),
+            TypeExpr::Unit => write!(f, "()"),
+            TypeExpr::Literal(lit) => write!(f, "{lit}"),
+            TypeExpr::Abstraction(param, expr) => write!(f, "(λ{param}. {expr})"),
+            TypeExpr::Application(e1, e2) => write!(f, "({e1} {e2})"),
+            TypeExpr::Annotation(expr, ty) => write!(f, "({expr}: {ty})"),
         }
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub(crate) enum Literal {
-    Unit,
-    Boolean,
-    Integer,
-    Float,
-    Char,
-    String,
-}
+impl TypeExpr {
+    pub fn var<V>(v: V) -> Self
+    where
+        V: Into<String>,
+    {
+        TypeExpr::Variable(v.into().into())
+    }
 
-impl std::fmt::Display for Literal {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                Literal::Unit => "()",
-                Literal::Boolean => "boolean",
-                Literal::Integer => "int",
-                Literal::Float => "float",
-                Literal::Char => "char",
-                Literal::String => "string",
-            }
-        )
+    pub fn abstraction<V>(param: V, expr: TypeExpr) -> Self
+    where
+        V: Into<String>,
+    {
+        TypeExpr::Abstraction(param.into().into(), Box::new(expr))
+    }
+
+    pub fn application(abs: TypeExpr, input: TypeExpr) -> Self {
+        TypeExpr::Application(Box::new(abs), Box::new(input))
+    }
+
+    pub fn annotation(expr: TypeExpr, ty: Type, tcx: &mut TypeContext) -> Self {
+        let var = match expr {
+            TypeExpr::Variable(var) => var,
+            TypeExpr::Unit | TypeExpr::Literal(_) => unreachable!(),
+            _ => tcx.fresh_type_var(),
+        };
+
+        tcx.annotate(var, ty.clone());
+
+        TypeExpr::Annotation(Box::new(expr), ty)
     }
 }
 
-const UNIT: Expression<'_> = Expression::Literal(Literal::Unit);
+// #[derive(Debug, Clone, Copy)]
+// pub enum Literal {
+//     Bool(bool),
+//     Int(i128),
+//     Float(f64),
+//     Char(char),
+//     String(Intern<String>),
+// }
+
+// impl std::fmt::Display for Literal {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self {
+//             Literal::Bool(b) => write!(f, "{b}"),
+//             Literal::Int(i) => write!(f, "{i}"),
+//             Literal::Float(fl) => write!(f, "{fl}"),
+//             Literal::Char(c) => write!(f, "'{c}'"),
+//             Literal::String(s) => write!(f, "\"{s}\""),
+//         }
+//     }
+// }
 
 #[cfg(test)]
 mod tests {
-
-    use super::{Expression, Variable, UNIT};
+    use super::TypeExpr;
+    use crate::typechk::{context::TypeContext, ty::Type};
 
     #[test]
-    fn identity() {
-        let param: Variable = "x".into();
-        let identity = Expression::Abstraction {
-            param: param.clone(),
-            expr: &Expression::Variable(param),
-        };
-
-        let let_ = Expression::Let {
-            ident: "identity".into(),
-            value: &identity,
-            in_expr: &UNIT,
-        };
-
-        println!("{let_}");
+    fn display() {
+        let mut tcx = TypeContext::default();
+        println!("{}", TypeExpr::Unit);
+        println!("{}", TypeExpr::var("x"));
+        println!("{}", TypeExpr::abstraction("id", TypeExpr::var("id")));
+        println!(
+            "{}",
+            TypeExpr::application(
+                TypeExpr::abstraction("id", TypeExpr::var("id")),
+                TypeExpr::var("x")
+            )
+        );
+        println!(
+            "{}",
+            TypeExpr::annotation(TypeExpr::var("x"), Type::var("int"), &mut tcx)
+        );
     }
 }

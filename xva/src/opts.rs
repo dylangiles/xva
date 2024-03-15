@@ -1,4 +1,4 @@
-use std::{collections::HashMap, error::Error};
+use std::error::Error;
 
 use clap::Parser;
 pub(super) fn parse_unstable_option(

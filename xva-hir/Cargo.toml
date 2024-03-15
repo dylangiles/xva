@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 xva-span = { path = "../xva-span" }
 xva-ast = { path = "../xva-ast" }
+internment = { version = "0.7.4", features = ["arena"] }

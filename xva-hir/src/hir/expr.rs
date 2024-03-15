@@ -1,4 +1,4 @@
-use xva_ast::ast::LiteralKind;
+use xva_ast::ast::{BindingFlags, BindingKind, BindingPattern, LiteralKind, Type};
 use xva_span::SourceSpan;
 
 use crate::id::HirId;
@@ -20,15 +20,13 @@ pub enum UnaryOp {
 }
 
 #[derive(Debug)]
-pub enum ExpressionKind<'hir> {
-    Binary(BinaryOp, &'hir Expression<'hir>, &'hir Expression<'hir>),
-    Unary(UnaryOp, &'hir Expression<'hir>),
-    Literal(LiteralKind),
+pub struct Expression {
+    pub id: HirId,
+    pub span: SourceSpan,
+    pub kind: ExpressionKind,
 }
 
 #[derive(Debug)]
-pub struct Expression<'hir> {
-    id: HirId,
-    span: SourceSpan,
-    kind: ExpressionKind<'hir>,
+pub enum ExpressionKind {
+    Literal(LiteralKind),
 }
