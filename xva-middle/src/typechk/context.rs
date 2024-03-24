@@ -1,5 +1,5 @@
 use im::OrdMap;
-use xva_ast::ast::LiteralKind;
+use xva_span::LiteralKind;
 
 use crate::typechk::{
     error::{TypeError, TypeResult},
@@ -15,7 +15,7 @@ pub struct TypeContext {
 }
 
 impl TypeContext {
-    pub(crate) fn check(&self, expr: &TypeExpr, against: &Type) -> TypeResult<Type> {
+    pub fn check(&self, expr: &TypeExpr, against: &Type) -> TypeResult<Type> {
         // Under the context Γ, expression e checks against type A:
 
         match expr {
@@ -38,7 +38,14 @@ impl TypeContext {
                     if against == ty {
                         Ok(ty.clone())
                     } else {
-                        Err(TypeError::Incompatible(expr.clone(), against.clone()))
+                        Err(TypeError::Mismatched {
+                            expr: expr.clone(),
+                            expected: against.clone(),
+                            found: ty.clone(),
+                            // expr.clone(),
+                            // ty.clone(),
+                            // against.clone(),
+                        })
                     }
                 };
 
@@ -48,8 +55,6 @@ impl TypeContext {
                     LiteralKind::Float(_) => lit_check(&ty_float),
                     LiteralKind::Char(_) => lit_check(&ty_char),
                     LiteralKind::String(_) => lit_check(&ty_string),
-
-                    _ => Err(TypeError::Incompatible(expr.clone(), against.clone())),
                 }
             }
 
@@ -66,13 +71,18 @@ impl TypeContext {
                 if &expr_ty == ty {
                     Ok(ty.clone())
                 } else {
-                    Err(TypeError::Incompatible(*expr.clone(), ty.clone()))
+                    Err(TypeError::Mismatched {
+                        expr: *expr.clone(),
+                        expected: ty.clone(),
+                        found: expr_ty,
+                        // *expr.clone(), ty.clone())
+                    })
                 }
             }
         }
     }
 
-    pub(crate) fn synthesise(&self, expr: &TypeExpr) -> TypeResult<Type> {
+    pub fn synthesise(&self, expr: &TypeExpr) -> TypeResult<Type> {
         match expr {
             TypeExpr::Unit => Ok(Type::Unit),
 
@@ -111,7 +121,12 @@ impl TypeContext {
                     if *input == arg_type {
                         Ok(*output)
                     } else {
-                        Err(TypeError::Incompatible(*arg.clone(), *input))
+                        //*arg.clone(), *input)
+                        Err(TypeError::Mismatched {
+                            expr: *arg.clone(),
+                            expected: *input.clone(),
+                            found: arg_type.clone(),
+                        })
                     }
                 } else {
                     // If the func type is not a function, raise a type error.
@@ -156,7 +171,7 @@ impl Default for TypeContext {
 #[cfg(test)]
 mod tests {
     use internment::Intern;
-    use xva_ast::ast::LiteralKind;
+    use xva_span::LiteralKind;
 
     use crate::typechk::{
         error::TypeResult,
@@ -181,7 +196,9 @@ mod tests {
         );
 
         assert_eq!(
-            tcx.synthesise(&TypeExpr::Literal(LiteralKind::Float(1.0)))?,
+            tcx.synthesise(&TypeExpr::Literal(LiteralKind::Float(
+                1.0_f64.to_ne_bytes()
+            )))?,
             builtin_float()
         );
 

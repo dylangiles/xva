@@ -2,12 +2,16 @@ use crate::typechk::{expr::TypeExpr, ty::Type, var::Variable};
 
 pub type TypeResult<T> = Result<T, TypeError>;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum TypeError {
     TypeUnknown(Variable),
     Malformed(Type),
     UnitIsNotUnit,
-    Incompatible(TypeExpr, Type),
+    Mismatched {
+        expr: TypeExpr,
+        expected: Type,
+        found: Type,
+    },
     NotAFunction(TypeExpr),
 }
 
@@ -31,9 +35,13 @@ impl std::fmt::Display for TypeError {
             TypeError::TypeUnknown(var) => write!(f, "The type of {var} is not known."),
             TypeError::Malformed(ty) => write!(f, "The type {ty} is not well-formed."),
             TypeError::UnitIsNotUnit => write!(f, "The expression does not evaluate to ()."),
-            TypeError::Incompatible(expr, ty) => write!(
+            TypeError::Mismatched {
+                expr,
+                expected,
+                found,
+            } => write!(
                 f,
-                "Incompatible types: the given expression is not of the type {ty}."
+                "Mismatched types: expected `{expected}`, found `{found}`"
             ),
             TypeError::NotAFunction(expr) => write!(f, "The expression {expr} is not a function."),
         }

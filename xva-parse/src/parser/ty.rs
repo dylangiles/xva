@@ -1,6 +1,6 @@
 use chumsky::{prelude::*, primitive::select};
-use xva_ast::ast::{Name, NameSegment, Type, TypeKind};
-use xva_span::{CheapRange, SourceSpan};
+use xva_ast::ast::{TypeAnno, TypeKind};
+use xva_span::{CheapRange, Identifier, Name, NameSegment, SourceSpan};
 
 use crate::token::{Delimiter, Token, TokenKind};
 
@@ -18,11 +18,8 @@ fn dot<'src>() -> impl Parser<'src, &'src [Token], (), ParserExtras> + Clone {
     })
 }
 
-fn ty_named<'src>() -> impl Parser<'src, &'src [Token], Type, ParserExtras> + Clone {
-    let name_segment = ident().map(|ident| NameSegment {
-        id: next_node_id(),
-        ident,
-    });
+fn ty_named<'src>() -> impl Parser<'src, &'src [Token], TypeAnno, ParserExtras> + Clone {
+    let name_segment = ident().map(|ident| NameSegment(ident));
 
     name_segment
         .clone()
@@ -36,20 +33,14 @@ fn ty_named<'src>() -> impl Parser<'src, &'src [Token], Type, ParserExtras> + Cl
         )
         .map(|(first, rest)| match rest {
             Some(segments) => {
-                let (first_span, last_span) = (
-                    segments.first().unwrap().ident.span,
-                    segments.last().unwrap().ident.span,
-                );
+                let NameSegment(first_ident) = first;
+                let last_span = segments.last().unwrap().ident().span;
+                let span = first_ident.span.copy_from_ending_at(last_span.end());
 
-                let span = SourceSpan::new(
-                    first_span.src(),
-                    CheapRange::new(first_span.start(), last_span.start()),
-                );
-
-                Type {
+                TypeAnno {
                     id: next_node_id(),
                     kind: TypeKind::Named(Name {
-                        id: next_node_id(),
+                        // id: next_node_id(),
                         span: span.clone(),
                         segments: {
                             let mut temp = Vec::with_capacity(1 + segments.len());
@@ -64,11 +55,11 @@ fn ty_named<'src>() -> impl Parser<'src, &'src [Token], Type, ParserExtras> + Cl
                 }
             }
             None => {
-                let span = first.ident.span.clone();
-                Type {
+                let span = first.ident().span.clone();
+                TypeAnno {
                     id: next_node_id(),
                     kind: TypeKind::Named(Name {
-                        id: next_node_id(),
+                        // id: next_node_id(),
                         span: span.clone(),
                         segments: vec![first; 1],
                     }),
@@ -78,10 +69,10 @@ fn ty_named<'src>() -> impl Parser<'src, &'src [Token], Type, ParserExtras> + Cl
         })
 }
 
-fn ty_builtin<'src>() -> impl Parser<'src, &'src [Token], Type, ParserExtras> + Clone {
+fn ty_builtin<'src>() -> impl Parser<'src, &'src [Token], TypeAnno, ParserExtras> + Clone {
     let unit = open_delim(Delimiter::Parentheses)
         .then(close_delim(Delimiter::Parentheses))
-        .map(|(start, end)| Type {
+        .map(|(start, end)| TypeAnno {
             id: next_node_id(),
             kind: TypeKind::Unit,
             span: SourceSpan::from_start_end(start, end),
@@ -91,7 +82,8 @@ fn ty_builtin<'src>() -> impl Parser<'src, &'src [Token], Type, ParserExtras> + 
     choice((unit,))
 }
 
-pub(super) fn ty<'src>() -> impl Parser<'src, &'src [Token], Type, ParserExtras> + Clone {
+pub(super) fn type_anno<'src>() -> impl Parser<'src, &'src [Token], TypeAnno, ParserExtras> + Clone
+{
     choice((ty_builtin(), ty_named()))
 }
 
@@ -106,7 +98,9 @@ mod tests {
     fn unit_type() {
         let input = "()";
         let (tokens, _) = lex(input, 0u32.into(), false);
-        let (tree, _) = super::ty().parse(tokens.as_slice()).into_output_errors();
+        let (tree, _) = super::type_anno()
+            .parse(tokens.as_slice())
+            .into_output_errors();
         let ty = tree.unwrap();
         match ty.kind {
             TypeKind::Unit => (),
@@ -119,13 +113,15 @@ mod tests {
     fn named_type_multiple_segments() {
         let input = "std.module.item";
         let (tokens, _) = lex(input, 0u32.into(), false);
-        let (tree, _) = super::ty().parse(tokens.as_slice()).into_output_errors();
+        let (tree, _) = super::type_anno()
+            .parse(tokens.as_slice())
+            .into_output_errors();
         let ty = tree.unwrap();
         match ty.kind {
             TypeKind::Named(name) => {
-                if name.segments[0].ident.name.as_str() != "std"
-                    || name.segments[1].ident.name.as_str() != "module"
-                    || name.segments[2].ident.name.as_str() != "item"
+                if name.segments[0].ident().name.as_str() != "std"
+                    || name.segments[1].ident().name.as_str() != "module"
+                    || name.segments[2].ident().name.as_str() != "item"
                 {
                     panic!("")
                 }
@@ -138,11 +134,13 @@ mod tests {
     fn named_type_one_segment() {
         let input = "bool";
         let (tokens, _) = lex(input, 0u32.into(), false);
-        let (tree, _) = super::ty().parse(tokens.as_slice()).into_output_errors();
+        let (tree, _) = super::type_anno()
+            .parse(tokens.as_slice())
+            .into_output_errors();
         let ty = tree.unwrap();
         match ty.kind {
             TypeKind::Named(name) => {
-                if name.segments[0].ident.name.as_str() != "bool" {
+                if name.segments[0].ident().name.as_str() != "bool" {
                     panic!("")
                 }
             }

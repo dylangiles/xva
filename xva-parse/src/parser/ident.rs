@@ -1,5 +1,5 @@
 use chumsky::{prelude::*, primitive::select};
-use xva_ast::ast::Identifier;
+use xva_span::Identifier;
 
 use crate::token::{Token, TokenKind};
 

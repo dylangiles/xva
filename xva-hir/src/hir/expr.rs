@@ -1,5 +1,5 @@
-use xva_ast::ast::{BindingFlags, BindingKind, BindingPattern, LiteralKind, Type};
-use xva_span::SourceSpan;
+use xva_ast::ast::{BindingFlags, BindingKind, BindingPattern, TypeAnno};
+use xva_span::{LiteralKind, SourceSpan};
 
 use crate::id::HirId;
 
@@ -19,14 +19,14 @@ pub enum UnaryOp {
     Negate,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Expression {
     pub id: HirId,
     pub span: SourceSpan,
     pub kind: ExpressionKind,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ExpressionKind {
     Literal(LiteralKind),
 }

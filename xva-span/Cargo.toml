@@ -6,3 +6,4 @@ edition = "2021"
 [dependencies]
 chumsky = "1.0.0-alpha.6"
 ariadne = "0.4.0"
+internment = { version = "0.7.4", features = ["arena"] }

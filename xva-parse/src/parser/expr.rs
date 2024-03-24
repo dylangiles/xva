@@ -1,5 +1,6 @@
 use chumsky::{prelude::*, primitive::select, Parser};
-use xva_ast::ast::{Expression, ExpressionKind, Item, ItemKind, LiteralKind};
+use xva_ast::ast::{Expression, ExpressionKind, Item, ItemKind};
+use xva_span::LiteralKind;
 
 mod utils;
 
@@ -22,7 +23,7 @@ fn literal<'src>() -> impl Parser<'src, &'src [Token], Expression, extra::Err<Sy
         TokenKind::Boolean(b) => Some((LiteralKind::Boolean(b), token.span)),
         TokenKind::Char(c) => Some((LiteralKind::Char(c), token.span)),
         TokenKind::Integer(i) => Some((LiteralKind::Integer(i), token.span)),
-        TokenKind::Float(f) => Some((LiteralKind::Float(f), token.span)),
+        TokenKind::Float(f) => Some((LiteralKind::Float(f.to_ne_bytes()), token.span)),
         _ => None,
     })
     .map(|(lit, span)| Expression {

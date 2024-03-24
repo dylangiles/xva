@@ -2,7 +2,7 @@ use crate::has_node_id;
 use crate::node_id::{NodeId, ERROR_NODE_ID};
 use crate::traits::HasNodeId;
 use internment::Intern;
-use xva_span::SourceSpan;
+use xva_span::{LiteralKind, SourceSpan};
 
 mod stmt;
 mod ty;
@@ -70,27 +70,6 @@ pub enum ExpressionKind {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub enum LiteralKind {
-    Integer(i128),
-    Boolean(bool),
-    Char(char),
-    Float(f64),
-    String(Intern<String>), // TODO PLEASE change this to interned strings bruh
-}
-
-impl std::fmt::Display for LiteralKind {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            LiteralKind::Integer(i) => write!(f, "{i}"),
-            LiteralKind::Boolean(b) => write!(f, "{b}"),
-            LiteralKind::Float(fl) => write!(f, "{fl}"),
-            LiteralKind::Char(c) => write!(f, "'{c}'"),
-            LiteralKind::String(s) => write!(f, "\"{s}\""),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
 pub enum UnaryOperator {
     Negation,
     Not,
@@ -125,26 +104,26 @@ pub enum LiteralIntegerKind {
     Unsigned,
 }
 
-#[derive(Debug, Clone)]
-pub struct Identifier {
-    pub name: Intern<String>,
-    pub span: SourceSpan,
-}
+// #[derive(Debug, Clone)]
+// pub struct Identifier {
+//     pub name: Intern<String>,
+//     pub span: SourceSpan,
+// }
 
-/// A Xva identifier. This may be made up by a series of [`NameSegment`]s that further qualify a path
-/// to a declaration.
-#[derive(Debug, Clone)]
-pub struct Name {
-    pub id: NodeId,
-    pub span: SourceSpan,
-    pub segments: Vec<NameSegment>,
-}
+// /// A Xva identifier. This may be made up by a series of [`NameSegment`]s that further qualify a path
+// /// to a declaration.
+// #[derive(Debug, Clone)]
+// pub struct Name {
+//     pub id: NodeId,
+//     pub span: SourceSpan,
+//     pub segments: Vec<NameSegment>,
+// }
 
-/// A segment of a Xva identifier. For example, the name `brick.module.function` would contain three [`NameSegment`]s.
-#[derive(Debug, Clone)]
-pub struct NameSegment {
-    pub id: NodeId,
-    pub ident: Identifier,
-}
+// /// A segment of a Xva identifier. For example, the name `brick.module.function` would contain three [`NameSegment`]s.
+// #[derive(Debug, Clone)]
+// pub struct NameSegment {
+//     pub id: NodeId,
+//     pub ident: Identifier,
+// }
 
 has_node_id!(Item, Expression);

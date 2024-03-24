@@ -1,8 +1,9 @@
 use internment::Intern;
-use xva_ast::ast::Type;
+
+use xva_middle::Type;
 use xva_span::SourceSpan;
 
-use super::expr::Expression;
+use super::{expr::Expression, ty::TypeAnno};
 use crate::id::HirId;
 
 #[derive(Debug)]
@@ -28,7 +29,8 @@ pub struct Local {
     /// The type annotation. If `None`, no type annotation was provided.
     ///
     /// Note that `None` is a distinct but related concept to [`TypeKind::Infer`]
-    pub ty: Option<Type>,
+    pub type_anno: Option<TypeAnno>,
+    pub ty: Type,
 }
 
 #[derive(Debug)]

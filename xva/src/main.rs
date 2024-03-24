@@ -3,7 +3,7 @@
 use clap::Parser;
 use std::io::{BufRead, Write};
 use xva_compiler::Compiler;
-use xva_hir::HirContext;
+use xva_hir::{HirContext, Item};
 
 mod opts;
 
@@ -37,32 +37,23 @@ fn run_repl(opts: &Options) -> std::io::Result<()> {
         let mut compiler = Compiler::default();
         let src_id = compiler.load_virtual_file(REPL_SOURCE_NAME.into(), line);
 
-        let (tree, errors) = xva_parse::parser::parse(
-            compiler.get_file_content(src_id).unwrap().as_ref(),
-            src_id,
-            pretty_lex,
-        );
-
-        if pretty_ast {
-            println!("{tree:#?}")
-        }
-
-        if errors.len() != 0 {
-            for error in errors {
-                let writer = stdout.lock();
-                compiler.write_syntax_error(error, writer);
-            }
-
-            continue;
-        }
+        let ast = compiler.parse(src_id, pretty_lex, pretty_ast);
 
         let hcx = HirContext::new();
-        let hir = tree
+        let hir = ast
             .into_iter()
-            .map(|item| hcx.lower(item))
+            .map(|item| match hcx.lower(item) {
+                Ok(item) => Some(item),
+                Err(error) => {
+                    let writer = stdout.lock();
+                    compiler.write_hir_error(error, writer);
+                    None
+                }
+            })
+            .filter_map(|item| item)
             .collect::<Vec<_>>();
 
-        if pretty_hir {
+        if pretty_hir && hir.len() > 0 {
             println!("{hir:#?}");
         }
     }

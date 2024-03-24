@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 clap = { version = "4.3.3", features = ["derive", "cargo"] }
 xva-compiler = { path = "../xva-compiler" }
-xva-parse = { path = "../xva-parse" }
+# xva-parse = { path = "../xva-parse" }
 xva-hir = { path = "../xva-hir" }
 # xva-middle = { path = "../xva-middle" }
 

@@ -16,7 +16,7 @@ use super::{
     ident::ident,
     next_node_id,
     sigil::{just_operator, Op},
-    ty::ty,
+    ty::type_anno,
     ParserExtras,
 };
 
@@ -49,7 +49,7 @@ fn variable<'src>() -> impl Parser<'src, &'src [Token], Statement, ParserExtras>
         .then(ident())
         .then(
             just_operator(Op::Colon)
-                .then(ty())
+                .then(type_anno())
                 .or_not()
                 .map(|x| x.map(|(_, ty)| ty)),
         )
@@ -86,7 +86,7 @@ fn local<'src>() -> impl Parser<'src, &'src [Token], Statement, ParserExtras> + 
         .then(ident())
         .then(
             just_operator(Op::Colon)
-                .then(ty())
+                .then(type_anno())
                 .or_not()
                 .map(|x| x.map(|(_, ty)| ty)),
         )

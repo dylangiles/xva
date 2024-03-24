@@ -8,5 +8,6 @@ edition = "2021"
 [dependencies]
 im = "15.1.0"
 internment = { version = "0.7.4", features = ["arena"] }
-xva-hir = { path = "../xva-hir" }
-xva-ast = { path = "../xva-ast" }
+xva-span = { path = "../xva-span" }
+# xva-hir = { path = "../xva-hir" }
+# xva-ast = { path = "../xva-ast" }

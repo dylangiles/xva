@@ -1,3 +1,4 @@
+use internment::Intern;
 use xva_span::SourceSpan;
 
 use super::stmt::Statement;
@@ -16,4 +17,5 @@ pub struct Item {
 #[derive(Debug)]
 pub enum ItemKind {
     Statement(Statement),
+    Error(Intern<String>),
 }

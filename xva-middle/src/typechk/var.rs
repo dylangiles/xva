@@ -1,11 +1,17 @@
 use internment::Intern;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Variable(Intern<String>);
+pub struct Variable(pub(crate) Intern<String>);
 
 impl From<String> for Variable {
     fn from(value: String) -> Self {
         Self(Intern::new(value))
+    }
+}
+
+impl From<Intern<String>> for Variable {
+    fn from(value: Intern<String>) -> Self {
+        Self(value)
     }
 }
 

@@ -1,7 +1,9 @@
 use std::ops::AddAssign;
 
+use xva_ast::node_id::NodeId;
+
 #[derive(Clone, Copy)]
-pub struct HirId(pub u64);
+pub struct HirId(pub i64);
 
 impl std::fmt::Debug for HirId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -20,14 +22,21 @@ impl PartialEq for HirId {
 
 impl Eq for HirId {}
 
-impl From<u64> for HirId {
-    fn from(value: u64) -> Self {
+impl From<i64> for HirId {
+    fn from(value: i64) -> Self {
         Self(value)
     }
 }
 
-impl AddAssign<u64> for HirId {
-    fn add_assign(&mut self, rhs: u64) {
+impl From<NodeId> for HirId {
+    fn from(value: NodeId) -> Self {
+        let NodeId(v) = value;
+        Self(v)
+    }
+}
+
+impl AddAssign<i64> for HirId {
+    fn add_assign(&mut self, rhs: i64) {
         self.0 += rhs
     }
 }

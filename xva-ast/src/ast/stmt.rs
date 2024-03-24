@@ -1,6 +1,6 @@
-use xva_span::SourceSpan;
+use xva_span::{Identifier, SourceSpan};
 
-use super::{Expression, Identifier, Type};
+use super::{Expression, TypeAnno};
 use crate::node_id::NodeId;
 
 #[derive(Debug)]
@@ -29,7 +29,7 @@ pub struct Local {
     /// The type annotation. If `None`, no type annotation was provided.
     ///
     /// Note that `None` is a distinct but related concept to [`TypeKind::Infer`]
-    pub ty: Option<Type>,
+    pub ty: Option<TypeAnno>,
 }
 
 #[derive(Debug)]

@@ -1,5 +1,5 @@
 use internment::Intern;
-use xva_ast::ast::LiteralKind;
+use xva_span::LiteralKind;
 
 use crate::typechk::{context::TypeContext, ty::Type, var::Variable};
 
@@ -13,7 +13,7 @@ use crate::typechk::{context::TypeContext, ty::Type, var::Variable};
 ///    | (e : A)   [annotation]
 /// ```
 ///
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TypeExpr {
     /// A variable, suchg as `x`
     Variable(Variable),

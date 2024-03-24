@@ -8,3 +8,5 @@ edition = "2021"
 [dependencies]
 xva-span = { path = "../xva-span" }
 xva-parse = { path = "../xva-parse" }
+xva-hir = { path = "../xva-hir" }
+xva-ast = { path = "../xva-ast" }
