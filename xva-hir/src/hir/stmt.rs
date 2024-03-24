@@ -1,7 +1,7 @@
 use internment::Intern;
 
 use xva_middle::Type;
-use xva_span::SourceSpan;
+use xva_span::{Identifier, SourceSpan};
 
 use super::{expr::Expression, ty::TypeAnno};
 use crate::id::HirId;
@@ -22,9 +22,10 @@ pub enum StatementKind {
 pub struct Local {
     pub id: HirId,
     pub span: SourceSpan,
-    pub binding_kind: BindingKind,
+
     pub binding_flags: BindingFlags,
     pub pattern: BindingPattern,
+    pub expr: Option<Expression>,
 
     /// The type annotation. If `None`, no type annotation was provided.
     ///
@@ -39,7 +40,7 @@ pub enum BindingKind {
     Inited(Box<Expression>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum BindingPattern {
     Identifier(Identifier),
 }
@@ -51,8 +52,8 @@ pub struct BindingFlags {
     pub mutable: bool,
 }
 
-#[derive(Debug, Clone)]
-pub struct Identifier {
-    pub name: Intern<String>,
-    pub span: SourceSpan,
-}
+// #[derive(Debug, Clone)]
+// pub struct Identifier {
+//     pub name: Intern<String>,
+//     pub span: SourceSpan,
+// }

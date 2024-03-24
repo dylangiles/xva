@@ -39,7 +39,7 @@ fn run_repl(opts: &Options) -> std::io::Result<()> {
 
         let ast = compiler.parse(src_id, pretty_lex, pretty_ast);
 
-        let hcx = HirContext::new();
+        let mut hcx = HirContext::new();
         let hir = ast
             .into_iter()
             .map(|item| match hcx.lower(item) {

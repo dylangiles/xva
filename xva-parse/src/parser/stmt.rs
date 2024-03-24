@@ -66,10 +66,7 @@ fn variable<'src>() -> impl Parser<'src, &'src [Token], Statement, ParserExtras>
                 id: next_node_id(),
                 kind: StatementKind::Local(Local {
                     id: next_node_id(),
-                    binding_kind: maybe_expr.map_or_else(
-                        || BindingKind::Declared,
-                        |expr| BindingKind::Inited(Box::from(expr)),
-                    ),
+                    expr: maybe_expr,
                     span,
                     binding_flags: BindingFlags { mutable: true },
                     pattern: BindingPattern::Identifier(ident),
@@ -98,9 +95,7 @@ fn local<'src>() -> impl Parser<'src, &'src [Token], Statement, ParserExtras> + 
                 id: next_node_id(),
                 kind: StatementKind::Local(Local {
                     id: next_node_id(),
-                    binding_kind: maybe_expr.map_or(BindingKind::Declared, |(_, expr)| {
-                        BindingKind::Inited(Box::from(expr))
-                    }),
+                    expr: maybe_expr.map_or(None, |(_, expr)| Some(expr)),
                     span,
                     binding_flags: BindingFlags { mutable: false },
                     pattern: BindingPattern::Identifier(ident),
@@ -126,8 +121,8 @@ fn validate_local(stmt: Statement, emitter: &mut Emitter<SyntaxError>) -> Item {
             };
 
             // If the local was not initialised
-            if let BindingKind::Declared = local.binding_kind {
-                // and it is declared as mutable (`var`)
+            if let None = &local.expr {
+                // and it is not declared as mutable (`var`)
                 if !local.binding_flags.mutable {
                     // Raise a syntax error
                     let expr_start = stmt.span.copy_from_starting_at(stmt.span.end());

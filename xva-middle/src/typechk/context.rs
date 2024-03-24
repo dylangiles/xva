@@ -19,45 +19,6 @@ impl TypeContext {
         // Under the context Γ, expression e checks against type A:
 
         match expr {
-            TypeExpr::Unit => {
-                if against.is_unit() {
-                    Ok(Type::Unit)
-                } else {
-                    Err(TypeError::UnitIsNotUnit)
-                }
-            }
-
-            TypeExpr::Literal(lit) => {
-                let ty_bool = builtin_bool();
-                let ty_int = builtin_int();
-                let ty_float = builtin_float();
-                let ty_char = builtin_char();
-                let ty_string = builtin_string();
-
-                let lit_check = |ty: &Type| {
-                    if against == ty {
-                        Ok(ty.clone())
-                    } else {
-                        Err(TypeError::Mismatched {
-                            expr: expr.clone(),
-                            expected: against.clone(),
-                            found: ty.clone(),
-                            // expr.clone(),
-                            // ty.clone(),
-                            // against.clone(),
-                        })
-                    }
-                };
-
-                match lit {
-                    LiteralKind::Boolean(_) => lit_check(&ty_bool),
-                    LiteralKind::Integer(_) => lit_check(&ty_int),
-                    LiteralKind::Float(_) => lit_check(&ty_float),
-                    LiteralKind::Char(_) => lit_check(&ty_char),
-                    LiteralKind::String(_) => lit_check(&ty_string),
-                }
-            }
-
             TypeExpr::Variable(var) => self
                 .elems
                 .get(var)
@@ -76,6 +37,36 @@ impl TypeContext {
                         expected: ty.clone(),
                         found: expr_ty,
                         // *expr.clone(), ty.clone())
+                    })
+                }
+            }
+
+            TypeExpr::Unit => {
+                let expr_ty = self.synthesise(expr)?;
+                if against.is_unit() {
+                    Ok(Type::Unit)
+                } else {
+                    Err(TypeError::Mismatched {
+                        expr: expr.clone(),
+                        expected: Type::Unit,
+                        found: expr_ty,
+                    })
+                }
+            }
+
+            TypeExpr::Literal(_) => {
+                let expr_ty = self.synthesise(expr)?;
+
+                if against == &expr_ty {
+                    Ok(expr_ty.clone())
+                } else {
+                    Err(TypeError::Mismatched {
+                        expr: expr.clone(),
+                        expected: against.clone(),
+                        found: expr_ty.clone(),
+                        // expr.clone(),
+                        // ty.clone(),
+                        // against.clone(),
                     })
                 }
             }
@@ -136,11 +127,23 @@ impl TypeContext {
         }
     }
 
-    pub(crate) fn annotate<V>(&mut self, var: V, ty: Type) -> Option<Type>
+    pub fn annotate<V>(&mut self, var: V, ty: Type) -> TypeResult<Type>
     where
-        V: Into<Variable>,
+        V: Into<Variable> + std::fmt::Display + Clone,
     {
-        self.elems.insert(var.into(), ty)
+        println!("Annotating {var} with {ty}");
+        match ty {
+            Type::Variable(ty_var) => match self.elems.get(&ty_var) {
+                Some(annotated) => Ok(annotated.clone()),
+                None => Err(TypeError::TypeNotFound(ty_var)),
+            },
+            _ => match self.elems.insert(var.clone().into(), ty.clone()) {
+                Some(annotated) => Ok(annotated),
+                None => {
+                    panic!("None value returned when annotating variable: var: {var}, ty: {ty}")
+                }
+            },
+        }
     }
 
     pub(crate) fn fresh_type_var(&mut self) -> Variable {

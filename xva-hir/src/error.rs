@@ -64,6 +64,7 @@ impl HirError {
                 format!("{err}")
             }
         };
+        // let some_rand: BingBong = 1;
 
         let report = Report::build(ReportKind::Error, self.span.src(), self.span.start())
             .with_code(3)
@@ -73,7 +74,11 @@ impl HirError {
                     .with_message("Type must be known at this point")
                     .with_color(Color::Cyan),
                 HirErrorKind::TypeError { err, because_of } => match err {
-                    TypeError::TypeUnknown(_) => todo!(),
+                    TypeError::TypeUnknown(var) => todo!(),
+                    TypeError::TypeNotFound(var) => Label::new(because_of.clone())
+                        .with_message(format!("`{var}` is unknown in the current scope"))
+                        .with_color(Color::Cyan),
+
                     TypeError::Malformed(_) => todo!(),
                     TypeError::UnitIsNotUnit => todo!(),
                     TypeError::Mismatched { expected, .. } => Label::new(because_of.clone())

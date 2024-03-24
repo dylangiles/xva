@@ -22,9 +22,10 @@ pub enum StatementKind {
 pub struct Local {
     pub id: NodeId,
     pub span: SourceSpan,
-    pub binding_kind: BindingKind,
+
     pub binding_flags: BindingFlags,
     pub pattern: BindingPattern,
+    pub expr: Option<Expression>,
 
     /// The type annotation. If `None`, no type annotation was provided.
     ///

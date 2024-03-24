@@ -54,14 +54,14 @@ pub struct Module {
     pub items: Vec<Item>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Expression {
     pub id: NodeId,
     pub kind: ExpressionKind,
     pub span: SourceSpan,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ExpressionKind {
     Literal(LiteralKind),
     Identifier(String),
@@ -75,7 +75,7 @@ pub enum UnaryOperator {
     Not,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum BinaryOperator {
     LogicalAnd,
     LogicalOr,
