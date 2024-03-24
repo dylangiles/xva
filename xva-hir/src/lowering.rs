@@ -1,10 +1,9 @@
-mod expr;
-mod stmt;
-
-use internment::Intern;
-use xva_ast::ast::{self};
+use xva_ast::ast;
 use xva_middle::{typechk::expr::TypeExpr, Type};
 use xva_span::SourceSpan;
+
+mod expr;
+mod stmt;
 
 use crate::hir::{next_hir_id, HirResult};
 use crate::{error::HirError, ItemKind};
@@ -44,10 +43,10 @@ impl HirContext {
     ) -> HirResult<Type> {
         match anno {
             Some(anno) => match binding {
-                BindingPattern::Identifier(ident) => match self.tcx.annotate::<Intern<String>>(
-                    ident.name.into(),
-                    self.type_anno_into_type(anno.clone()),
-                ) {
+                BindingPattern::Identifier(ident) => match self
+                    .tcx
+                    .annotate(ident.name, self.type_anno_into_type(anno.clone()))
+                {
                     Ok(ty) => match expr {
                         Some(expr) => {
                             match self.tcx.check(&self.lower_expr_to_type_expr(&expr), &ty) {

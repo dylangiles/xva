@@ -26,7 +26,7 @@ mod ty;
 
 use self::{expr::expression, stmt::statement};
 use crate::{
-    error::{ErrorPattern, SyntaxError, SyntaxErrorKind},
+    error::{ErrorPattern, SyntaxError},
     lexer::lex,
     token::Token,
 };

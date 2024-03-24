@@ -1,8 +1,6 @@
 use chumsky::{input::Emitter, prelude::*, primitive::select};
-use xva_ast::ast::{
-    BindingFlags, BindingKind, BindingPattern, Item, ItemKind, Local, Statement, StatementKind,
-};
-use xva_span::{CheapRange, SourceSpan};
+use xva_ast::ast::{BindingFlags, BindingPattern, Item, ItemKind, Local, Statement, StatementKind};
+use xva_span::SourceSpan;
 
 use crate::{
     error::SyntaxErrorKind,
@@ -12,7 +10,7 @@ use crate::{
 };
 
 use super::{
-    expr::{expression, expression_inner},
+    expr::expression_inner,
     ident::ident,
     next_node_id,
     sigil::{just_operator, Op},

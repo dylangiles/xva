@@ -1,6 +1,6 @@
 use chumsky::{prelude::*, primitive::select};
 use xva_ast::ast::{TypeAnno, TypeKind};
-use xva_span::{CheapRange, Identifier, Name, NameSegment, SourceSpan};
+use xva_span::{Name, NameSegment, SourceSpan};
 
 use crate::token::{Delimiter, Token, TokenKind};
 

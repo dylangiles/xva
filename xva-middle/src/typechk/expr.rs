@@ -1,4 +1,3 @@
-use internment::Intern;
 use xva_span::LiteralKind;
 
 use crate::typechk::{context::TypeContext, ty::Type, var::Variable};
@@ -73,7 +72,7 @@ impl TypeExpr {
             _ => tcx.fresh_type_var(),
         };
 
-        tcx.annotate(var, ty.clone());
+        let _ = tcx.annotate(var, ty.clone());
 
         TypeExpr::Annotation(Box::new(expr), ty)
     }

@@ -224,7 +224,7 @@ mod tests {
         let mut tcx = TypeContext::default();
         // let x: int
         let x_type = builtin_int();
-        tcx.annotate("x", x_type.clone());
+        let _ = tcx.annotate("x", x_type.clone());
 
         // We know x is annotated as int, so the expr must be int
         let expr = TypeExpr::Literal(LiteralKind::Boolean(false));

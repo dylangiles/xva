@@ -23,7 +23,7 @@ pub enum HirErrorKind {
 pub struct HirError {
     kind: HirErrorKind,
     span: SourceSpan,
-    label: Option<&'static str>,
+    _label: Option<&'static str>,
 }
 
 impl HirError {
@@ -31,7 +31,7 @@ impl HirError {
         Self {
             kind,
             span,
-            label: None,
+            _label: None,
         }
     }
 
@@ -39,7 +39,7 @@ impl HirError {
         Self {
             kind: HirErrorKind::TypeAnnoNeeded { expr_start: span },
             span,
-            label,
+            _label: label,
         }
     }
 
@@ -47,7 +47,7 @@ impl HirError {
         Self {
             kind: HirErrorKind::TypeError { err, because_of },
             span,
-            label: None,
+            _label: None,
         }
     }
 
@@ -74,7 +74,7 @@ impl HirError {
                     .with_message("Type must be known at this point")
                     .with_color(Color::Cyan),
                 HirErrorKind::TypeError { err, because_of } => match err {
-                    TypeError::TypeUnknown(var) => todo!(),
+                    TypeError::TypeUnknown(_) => todo!(),
                     TypeError::TypeNotFound(var) => Label::new(because_of.clone())
                         .with_message(format!("`{var}` is unknown in the current scope"))
                         .with_color(Color::Cyan),

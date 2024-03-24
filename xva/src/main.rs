@@ -3,7 +3,7 @@
 use clap::Parser;
 use std::io::{BufRead, Write};
 use xva_compiler::Compiler;
-use xva_hir::{HirContext, Item};
+use xva_hir::HirContext;
 
 mod opts;
 

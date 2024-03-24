@@ -63,10 +63,12 @@ pub(super) struct Options {
 }
 
 impl Options {
+    #[allow(dead_code)]
     pub(crate) fn get_unstable(&self, key: &str) -> Option<&UnstableOption> {
         self.unstable_options.iter().find(|x| x.key == key)
     }
 
+    #[allow(dead_code)]
     pub(crate) fn unstable_option_is(&self, key: &str, check: Option<&str>) -> bool {
         match self.unstable_options.iter().find(|x| x.key.as_str() == key) {
             Some(ref opt) => match &opt.value {

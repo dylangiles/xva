@@ -1,5 +1,3 @@
-use internment::Intern;
-
 use xva_middle::Type;
 use xva_span::{Identifier, SourceSpan};
 

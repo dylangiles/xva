@@ -1,5 +1,3 @@
-use self::{context::TypeContext, error::TypeResult, expr::TypeExpr, ty::Type, var::Variable};
-
 pub mod context;
 pub mod error;
 pub mod expr;

@@ -1,4 +1,3 @@
-use xva_ast::ast::{BindingFlags, BindingKind, BindingPattern, TypeAnno};
 use xva_span::{LiteralKind, SourceSpan};
 
 use crate::id::HirId;
