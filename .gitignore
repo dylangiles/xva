@@ -1,0 +1,10 @@
+/target
+/Cargo.lock
+.DS_Store
+*.wasm
+*.exp
+*.lib
+*.obj
+syntax/treesitter/build
+**/node_modules/**
+.buildinfo
